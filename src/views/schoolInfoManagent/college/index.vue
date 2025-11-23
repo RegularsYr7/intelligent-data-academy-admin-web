@@ -3,8 +3,11 @@
     <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="80px">
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-form-item label="学院代码" prop="collegeCode">
-            <el-input v-model="queryParams.collegeCode" placeholder="请输入学院代码" clearable @keyup.enter="handleQuery" />
+          <el-form-item label="学校名称" prop="schoolId">
+            <el-select v-model="queryParams.schoolId" placeholder="请选择学校" clearable filterable style="width: 100%;">
+              <el-option v-for="school in schoolList" :key="school.schoolId" :label="school.schoolName"
+                :value="school.schoolId"></el-option>
+            </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -12,23 +15,7 @@
             <el-input v-model="queryParams.collegeName" placeholder="请输入学院名称" clearable @keyup.enter="handleQuery" />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label="学院类型" prop="collegeType">
-            <el-select v-model="queryParams.collegeType" placeholder="请选择学院类型" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_school_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="创建时间" prop="createTime">
-            <el-date-picker clearable v-model="queryParams.createTime" type="date" value-format="YYYY-MM-DD"
-              placeholder="请选择创建时间" style="width: 100%;">
-            </el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="24" style="text-align: right;">
+        <el-col :span="12" style="text-align: right;">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -58,16 +45,12 @@
 
     <el-table v-loading="loading" :data="collegeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="学院代码" align="center" prop="collegeCode" />
-      <el-table-column label="学院名称" align="center" prop="collegeName" />
-      <el-table-column label="学院类型" align="center" prop="collegeType">
-        <template #default="scope">
-          <dict-tag :options="edu_school_type" :value="scope.row.collegeType" />
-        </template>
-      </el-table-column>
-      <el-table-column label="院长姓名" align="center" prop="deanName" />
-      <el-table-column label="联系电话" align="center" prop="contactPhone" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="ID" align="center" prop="collegeId" width="80" />
+      <el-table-column label="所属学校" align="center" prop="schoolName" min-width="120" />
+      <el-table-column label="学院名称" align="center" prop="collegeName" min-width="120" />
+      <el-table-column label="学院简介" align="center" prop="introduction" min-width="200" show-overflow-tooltip />
+      <el-table-column label="显示顺序" align="center" prop="sortOrder" width="100" />
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['edu:college:edit']">修改</el-button>
@@ -81,10 +64,10 @@
       v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改学院信息对话框 -->
-    <el-dialog :title="title" v-model="open" width="900px" append-to-body>
-      <el-form ref="collegeRef" :model="form" :rules="rules" label-width="120px">
+    <el-dialog :title="title" v-model="open" width="700px" append-to-body>
+      <el-form ref="collegeRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="所属学校" prop="schoolId">
               <el-select v-model="form.schoolId" placeholder="请选择所属学校" clearable filterable style="width: 100%;">
                 <el-option v-for="school in schoolList" :key="school.schoolId" :label="school.schoolName"
@@ -92,105 +75,25 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="学院代码" prop="collegeCode">
-              <el-input v-model="form.collegeCode" placeholder="请输入学院代码" />
-            </el-form-item>
-          </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="学院名称" prop="collegeName">
               <el-input v-model="form.collegeName" placeholder="请输入学院名称" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="学院英文名称" prop="collegeNameEn">
-              <el-input v-model="form.collegeNameEn" placeholder="请输入学院英文名称" />
-            </el-form-item>
-          </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="学院类型" prop="collegeType">
-              <el-select v-model="form.collegeType" placeholder="请选择学院类型" style="width: 100%;">
-                <el-option v-for="dict in edu_school_type" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="父学院ID" prop="parentId">
-              <el-input v-model="form.parentId" placeholder="请输入父学院ID" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="院长姓名" prop="deanName">
-              <el-input v-model="form.deanName" placeholder="请输入院长姓名" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="书记姓名" prop="secretaryName">
-              <el-input v-model="form.secretaryName" placeholder="请输入书记姓名" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="联系电话" prop="contactPhone">
-              <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="联系邮箱" prop="contactEmail">
-              <el-input v-model="form.contactEmail" placeholder="请输入联系邮箱" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="办公地点" prop="officeLocation">
-              <el-input v-model="form.officeLocation" placeholder="请输入办公地点" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="成立日期" prop="establishedDate">
-              <el-date-picker clearable v-model="form.establishedDate" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择成立日期" style="width: 100%;">
-              </el-date-picker>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="学生数量" prop="studentCount">
-              <el-input v-model="form.studentCount" placeholder="请输入学生数量" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="教师数量" prop="teacherCount">
-              <el-input v-model="form.teacherCount" placeholder="请输入教师数量" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="显示顺序" prop="sortOrder">
-              <el-input v-model="form.sortOrder" placeholder="请输入显示顺序" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="学院简介" prop="introduction">
-              <el-input v-model="form.introduction" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
+        <el-row :gutter="20">
           <el-col :span="24">
-            <el-form-item label="备注" prop="remark">
-              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+            <el-form-item label="学院简介" prop="introduction">
+              <el-input v-model="form.introduction" type="textarea" :rows="4" placeholder="请输入学院简介" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="显示顺序" prop="sortOrder">
+              <el-input-number v-model="form.sortOrder" :min="0" controls-position="right" style="width: 100%;" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -210,7 +113,6 @@ import { listCollege, getCollege, delCollege, addCollege, updateCollege } from "
 import { listSchool } from "@/api/edu/school"
 
 const { proxy } = getCurrentInstance()
-const { edu_school_type } = proxy.useDict('edu_school_type')
 
 const collegeList = ref([])
 const schoolList = ref([])
@@ -229,18 +131,11 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     schoolId: null,
-    collegeCode: null,
     collegeName: null,
-    collegeType: null,
-    status: null,
-    createTime: null,
   },
   rules: {
     schoolId: [
-      { required: true, message: "所属学校ID不能为空", trigger: "change" }
-    ],
-    collegeCode: [
-      { required: true, message: "学院代码不能为空", trigger: "blur" }
+      { required: true, message: "所属学校不能为空", trigger: "change" }
     ],
     collegeName: [
       { required: true, message: "学院名称不能为空", trigger: "blur" }
@@ -260,6 +155,13 @@ function getList() {
   })
 }
 
+/** 获取学校列表 */
+function getSchoolList() {
+  listSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+    schoolList.value = response.rows
+  })
+}
+
 // 取消按钮
 function cancel() {
   open.value = false
@@ -271,33 +173,9 @@ function reset() {
   form.value = {
     collegeId: null,
     schoolId: null,
-    collegeCode: null,
     collegeName: null,
-    collegeNameEn: null,
-    collegeType: null,
-    parentId: null,
-    ancestors: null,
-    deanId: null,
-    deanName: null,
-    viceDeanNames: null,
-    secretaryId: null,
-    secretaryName: null,
-    contactPhone: null,
-    contactEmail: null,
-    officeLocation: null,
-    establishedDate: null,
-    studentCount: null,
-    teacherCount: null,
-    majorCount: null,
     introduction: null,
-    sortOrder: null,
-    status: null,
-    delFlag: null,
-    createBy: null,
-    createTime: null,
-    updateBy: null,
-    updateTime: null,
-    remark: null
+    sortOrder: 0
   }
   proxy.resetForm("collegeRef")
 }
@@ -321,17 +199,9 @@ function handleSelectionChange(selection) {
   multiple.value = !selection.length
 }
 
-/** 获取学校列表 */
-function getSchoolList() {
-  listSchool().then(response => {
-    schoolList.value = response.rows
-  })
-}
-
 /** 新增按钮操作 */
 function handleAdd() {
   reset()
-  getSchoolList()
   open.value = true
   title.value = "添加学院信息"
 }
@@ -339,7 +209,6 @@ function handleAdd() {
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
-  getSchoolList()
   const _collegeId = row.collegeId || ids.value
   getCollege(_collegeId).then(response => {
     form.value = response.data
@@ -387,5 +256,7 @@ function handleExport() {
   }, `college_${new Date().getTime()}.xlsx`)
 }
 
+// 初始化
 getList()
+getSchoolList()
 </script>

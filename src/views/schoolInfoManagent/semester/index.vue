@@ -12,53 +12,7 @@
             <el-input v-model="queryParams.className" placeholder="请输入班级名称" clearable @keyup.enter="handleQuery" />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label="学期开始日期">
-            <el-date-picker v-model="daterangeStartDate" value-format="YYYY-MM-DD" type="daterange" range-separator="-"
-              start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="学期结束日期">
-            <el-date-picker v-model="daterangeEndDate" value-format="YYYY-MM-DD" type="daterange" range-separator="-"
-              start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20" style="margin-top: 18px;">
-        <el-col :span="6">
-          <el-form-item label="学年" prop="academicYear">
-            <el-input v-model="queryParams.academicYear" placeholder="请输入学年" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="学期类型" prop="semesterType">
-            <el-select v-model="queryParams.semesterType" placeholder="请选择学期类型" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_semester_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="是否当前学期" prop="isCurrent">
-            <el-input v-model="queryParams.isCurrent" placeholder="请输入是否当前学期" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 100%;">
-              <el-option v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20" style="margin-top: 18px;">
-        <el-col :span="6">
-          <el-form-item label="创建时间" prop="createTime">
-            <el-date-picker clearable v-model="queryParams.createTime" type="date" value-format="YYYY-MM-DD"
-              placeholder="请选择创建时间" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
-        <el-col :span="18">
+        <el-col :span="12" style="text-align: right;">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -87,36 +41,29 @@
     </el-row>
 
     <el-table v-loading="loading" :data="semesterList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" fixed />
-      <el-table-column label="学期名称" align="center" prop="semesterName" min-width="120" show-overflow-tooltip />
-      <el-table-column label="班级名称" align="center" prop="className" min-width="120" show-overflow-tooltip />
-      <el-table-column label="学期时间" align="center" prop="startDate" width="200" show-overflow-tooltip>
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.startDate, '{y}-{m}-{d}') }} ~ {{ parseTime(scope.row.endDate, '{y}-{m}-{d}')
-          }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="周数" align="center" prop="currentWeek" width="100">
-        <template #default="scope">
-          <span>{{ scope.row.currentWeek }} / {{ scope.row.totalWeeks }}</span>
-        </template>
-      </el-table-column>
+      <el-table-column type="selection" width="55" align="center" />
+      <el-table-column label="ID" align="center" prop="semesterId" width="80" />
+      <el-table-column label="学期名称" align="center" prop="semesterName" min-width="120" />
+      <el-table-column label="所属班级" align="center" prop="className" min-width="150" show-overflow-tooltip />
+      <el-table-column label="开始日期" align="center" prop="startDate" width="110" />
+      <el-table-column label="结束日期" align="center" prop="endDate" width="110" />
       <el-table-column label="学期类型" align="center" prop="semesterType" width="100">
         <template #default="scope">
           <dict-tag :options="edu_semester_type" :value="scope.row.semesterType" />
         </template>
       </el-table-column>
+      <el-table-column label="学年" align="center" prop="academicYear" width="100" />
       <el-table-column label="是否当前" align="center" prop="isCurrent" width="90">
         <template #default="scope">
           <dict-tag :options="sys_yes_no" :value="scope.row.isCurrent" />
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="110">
+      <el-table-column label="状态" align="center" prop="status" width="80">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
+          <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="150" fixed="right">
+      <el-table-column label="操作" align="center" width="150">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['edu:semester:edit']">修改</el-button>
@@ -130,18 +77,25 @@
       v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改学期管理对话框 -->
-    <el-dialog :title="title" v-model="open" width="1000px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="700px" append-to-body>
       <el-form ref="semesterRef" :model="form" :rules="rules" label-width="120px">
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="学期名称" prop="semesterName">
-              <el-input v-model="form.semesterName" placeholder="请输入学期名称" />
+              <el-input v-model="form.semesterName" placeholder="请输入学期名称，如：2024-2025学年第一学期" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="所属班级" prop="classId">
-              <el-select v-model="form.classId" placeholder="请选择班级" @change="handleClassChange" filterable
-                style="width: 100%;">
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="所属班级" prop="classIds" v-if="!form.semesterId">
+              <el-select v-model="form.classIds" placeholder="请选择班级（可多选）" multiple filterable style="width: 100%;">
+                <el-option v-for="item in classList" :key="item.classId" :label="item.className"
+                  :value="item.classId" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="所属班级" prop="classId" v-else>
+              <el-select v-model="form.classId" placeholder="请选择班级" filterable style="width: 100%;">
                 <el-option v-for="item in classList" :key="item.classId" :label="item.className"
                   :value="item.classId" />
               </el-select>
@@ -150,41 +104,17 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="学期开始日期" prop="startDate">
-              <el-date-picker clearable v-model="form.startDate" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择学期开始日期" style="width: 100%;">
+            <el-form-item label="开始日期" prop="startDate">
+              <el-date-picker v-model="form.startDate" type="date" value-format="YYYY-MM-DD" placeholder="请选择学期开始日期"
+                style="width: 100%;">
               </el-date-picker>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="学期结束日期" prop="endDate">
-              <el-date-picker clearable v-model="form.endDate" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择学期结束日期" style="width: 100%;">
+            <el-form-item label="结束日期" prop="endDate">
+              <el-date-picker v-model="form.endDate" type="date" value-format="YYYY-MM-DD" placeholder="请选择学期结束日期"
+                style="width: 100%;">
               </el-date-picker>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="总周数" prop="totalWeeks">
-              <el-input v-model="form.totalWeeks" placeholder="请输入总周数" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="当前周数" prop="currentWeek">
-              <el-input v-model="form.currentWeek" placeholder="请输入当前周数" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="周数偏移量" prop="weekOffset">
-              <el-input v-model="form.weekOffset" placeholder="请输入周数偏移量" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="学年" prop="academicYear">
-              <el-input v-model="form.academicYear" placeholder="请输入学年" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -198,6 +128,13 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="学年" prop="academicYear">
+              <el-input v-model="form.academicYear" placeholder="请输入学年，如：2024-2025" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="是否当前学期" prop="isCurrent">
               <el-radio-group v-model="form.isCurrent">
                 <el-radio label="Y">是</el-radio>
@@ -205,35 +142,12 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
                 <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
                 }}</el-radio>
               </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="节假日日期列表" prop="holidayDates">
-              <el-input v-model="form.holidayDates" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="调整说明" prop="adjustInfo">
-              <el-input v-model="form.adjustInfo" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="备注" prop="remark">
-              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -253,7 +167,7 @@ import { listSemester, getSemester, delSemester, addSemester, updateSemester } f
 import { listClass } from "@/api/edu/class"
 
 const { proxy } = getCurrentInstance()
-const { edu_semester_type, sys_normal_disable } = proxy.useDict('edu_semester_type', 'sys_normal_disable')
+const { edu_semester_type, sys_normal_disable, sys_yes_no } = proxy.useDict('edu_semester_type', 'sys_normal_disable', 'sys_yes_no')
 
 const semesterList = ref([])
 const classList = ref([])
@@ -265,8 +179,6 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
-const daterangeStartDate = ref([])
-const daterangeEndDate = ref([])
 
 const data = reactive({
   form: {},
@@ -274,37 +186,29 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     semesterName: null,
-    classId: null,
     className: null,
-    startDate: null,
-    endDate: null,
-    academicYear: null,
-    semesterType: null,
-    isCurrent: null,
-    status: null,
-    createTime: null,
   },
   rules: {
     semesterName: [
       { required: true, message: "学期名称不能为空", trigger: "blur" }
     ],
+    classIds: [
+      { required: true, message: "所属班级不能为空", trigger: "change" }
+    ],
     classId: [
-      { required: true, message: "班级ID不能为空", trigger: "change" }
+      { required: true, message: "所属班级不能为空", trigger: "change" }
     ],
     startDate: [
-      { required: true, message: "学期开始日期不能为空", trigger: "blur" }
+      { required: true, message: "开始日期不能为空", trigger: "blur" }
     ],
     endDate: [
-      { required: true, message: "学期结束日期不能为空", trigger: "blur" }
-    ],
-    totalWeeks: [
-      { required: true, message: "总周数不能为空", trigger: "blur" }
-    ],
-    academicYear: [
-      { required: true, message: "学年不能为空", trigger: "blur" }
+      { required: true, message: "结束日期不能为空", trigger: "blur" }
     ],
     semesterType: [
       { required: true, message: "学期类型不能为空", trigger: "change" }
+    ],
+    academicYear: [
+      { required: true, message: "学年不能为空", trigger: "blur" }
     ],
   }
 })
@@ -314,15 +218,6 @@ const { queryParams, form, rules } = toRefs(data)
 /** 查询学期管理列表 */
 function getList() {
   loading.value = true
-  queryParams.value.params = {}
-  if (null != daterangeStartDate && '' != daterangeStartDate) {
-    queryParams.value.params["beginStartDate"] = daterangeStartDate.value[0]
-    queryParams.value.params["endStartDate"] = daterangeStartDate.value[1]
-  }
-  if (null != daterangeEndDate && '' != daterangeEndDate) {
-    queryParams.value.params["beginEndDate"] = daterangeEndDate.value[0]
-    queryParams.value.params["endEndDate"] = daterangeEndDate.value[1]
-  }
   listSemester(queryParams.value).then(response => {
     semesterList.value = response.rows
     total.value = response.total
@@ -332,17 +227,9 @@ function getList() {
 
 /** 查询班级列表 */
 function getClassList() {
-  listClass().then(response => {
+  listClass({ pageNum: 1, pageSize: 1000 }).then(response => {
     classList.value = response.rows
   })
-}
-
-/** 班级选择改变时 */
-function handleClassChange(classId) {
-  const selectedClass = classList.value.find(c => c.classId === classId)
-  if (selectedClass) {
-    form.value.className = selectedClass.className
-  }
 }
 
 // 取消按钮
@@ -356,25 +243,14 @@ function reset() {
   form.value = {
     semesterId: null,
     semesterName: null,
+    classIds: [],
     classId: null,
-    className: null,
     startDate: null,
     endDate: null,
-    totalWeeks: 20,
-    currentWeek: null,
-    weekOffset: 0,
-    academicYear: null,
     semesterType: null,
+    academicYear: null,
     isCurrent: 'N',
-    holidayDates: null,
-    adjustInfo: null,
-    status: '0',
-    delFlag: null,
-    createBy: null,
-    createTime: null,
-    updateBy: null,
-    updateTime: null,
-    remark: null
+    status: '0'
   }
   proxy.resetForm("semesterRef")
 }
@@ -387,8 +263,6 @@ function handleQuery() {
 
 /** 重置按钮操作 */
 function resetQuery() {
-  daterangeStartDate.value = []
-  daterangeEndDate.value = []
   proxy.resetForm("queryRef")
   handleQuery()
 }
@@ -460,4 +334,5 @@ function handleExport() {
 }
 
 getList()
+getClassList()
 </script>

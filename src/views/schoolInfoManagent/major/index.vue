@@ -3,56 +3,23 @@
     <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="80px">
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-form-item label="专业代码" prop="majorCode">
-            <el-input v-model="queryParams.majorCode" placeholder="请输入专业代码" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="专业名称" prop="majorName">
-            <el-input v-model="queryParams.majorName" placeholder="请输入专业名称" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="专业大类" prop="majorCategory">
-            <el-input v-model="queryParams.majorCategory" placeholder="请输入专业大类" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="专业类型" prop="majorType">
-            <el-select v-model="queryParams.majorType" placeholder="请选择专业类型" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_major_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="就业率" prop="employmentRate">
-            <el-input v-model="queryParams.employmentRate" placeholder="请输入就业率" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_major_status" :key="dict.value" :label="dict.label" :value="dict.value" />
+          <el-form-item label="所属学校" prop="schoolId">
+            <el-select v-model="queryParams.schoolId" placeholder="请选择学校" clearable filterable
+              @change="handleSchoolChangeQuery" style="width: 100%;">
+              <el-option v-for="school in schoolList" :key="school.schoolId" :label="school.schoolName"
+                :value="school.schoolId"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="删除标志" prop="delFlag">
-            <el-input v-model="queryParams.delFlag" placeholder="请输入删除标志" clearable @keyup.enter="handleQuery" />
+          <el-form-item label="所属学院" prop="collegeId">
+            <el-select v-model="queryParams.collegeId" placeholder="请选择学院" clearable filterable style="width: 100%;">
+              <el-option v-for="college in queryCollegeList" :key="college.collegeId" :label="college.collegeName"
+                :value="college.collegeId"></el-option>
+            </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label="创建时间" prop="createTime">
-            <el-date-picker clearable v-model="queryParams.createTime" type="date" value-format="YYYY-MM-DD"
-              placeholder="请选择创建时间" style="width: 100%;">
-            </el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="24" style="text-align: right;">
+        <el-col :span="12" style="text-align: right;">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -82,25 +49,19 @@
 
     <el-table v-loading="loading" :data="majorList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="专业代码" align="center" prop="majorCode" />
-      <el-table-column label="专业名称" align="center" prop="majorName" />
-      <el-table-column label="专业类型" align="center" prop="majorType">
+      <el-table-column label="ID" align="center" prop="majorId" width="80" />
+      <el-table-column label="专业名称" align="center" prop="majorName" min-width="120" />
+      <el-table-column label="学制年限" align="center" prop="educationYears" width="100" />
+      <el-table-column label="授予学位" align="center" prop="degreeName" width="120" />
+      <el-table-column label="学费" align="center" prop="tuitionFee" width="100" />
+      <el-table-column label="就业方向" align="center" prop="careerDirection" min-width="150" show-overflow-tooltip />
+      <el-table-column label="专业简介" align="center" prop="introduction" min-width="200" show-overflow-tooltip />
+      <el-table-column label="状态" align="center" prop="status" width="80">
         <template #default="scope">
-          <dict-tag :options="edu_major_type" :value="scope.row.majorType" />
+          <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="学位类型" align="center" prop="degreeType">
-        <template #default="scope">
-          <dict-tag :options="edu_degree_type" :value="scope.row.degreeType" />
-        </template>
-      </el-table-column>
-      <el-table-column label="专业负责人" align="center" prop="majorDirector" />
-      <el-table-column label="状态" align="center" prop="status">
-        <template #default="scope">
-          <dict-tag :options="edu_major_status" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['edu:major:edit']">修改</el-button>
@@ -114,8 +75,8 @@
       v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改专业信息对话框 -->
-    <el-dialog :title="title" v-model="open" width="1000px" append-to-body>
-      <el-form ref="majorRef" :model="form" :rules="rules" label-width="120px">
+    <el-dialog :title="title" v-model="open" width="800px" append-to-body>
+      <el-form ref="majorRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="所属学校" prop="schoolId">
@@ -135,189 +96,56 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="专业代码" prop="majorCode">
-              <el-input v-model="form.majorCode" placeholder="请输入专业代码" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="专业名称" prop="majorName">
               <el-input v-model="form.majorName" placeholder="请输入专业名称" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="专业英文名称" prop="majorNameEn">
-              <el-input v-model="form.majorNameEn" placeholder="请输入专业英文名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="专业大类" prop="majorCategory">
-              <el-input v-model="form.majorCategory" placeholder="请输入专业大类" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="专业类型" prop="majorType">
-              <el-select v-model="form.majorType" placeholder="请选择专业类型" style="width: 100%;">
-                <el-option v-for="dict in edu_major_type" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="学位类型" prop="degreeType">
-              <el-select v-model="form.degreeType" placeholder="请选择学位类型" style="width: 100%;">
-                <el-option v-for="dict in edu_degree_type" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="学制年限" prop="educationYears">
-              <el-input v-model="form.educationYears" placeholder="请输入学制年限" />
+              <el-input-number v-model="form.educationYears" :min="1" :max="8" controls-position="right"
+                style="width: 100%;" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="授予学位" prop="degreeName">
-              <el-input v-model="form.degreeName" placeholder="请输入授予学位" />
+              <el-input v-model="form.degreeName" placeholder="请输入授予学位，如：工学学士" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="专业负责人" prop="majorDirector">
-              <el-input v-model="form.majorDirector" placeholder="请输入专业负责人" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="负责人电话" prop="directorPhone">
-              <el-input v-model="form.directorPhone" placeholder="请输入负责人电话" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="负责人邮箱" prop="directorEmail">
-              <el-input v-model="form.directorEmail" placeholder="请输入负责人邮箱" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="专业设立日期" prop="establishedDate">
-              <el-date-picker clearable v-model="form.establishedDate" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择专业设立日期" style="width: 100%;">
-              </el-date-picker>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="年度招生计划" prop="enrollmentPlan">
-              <el-input v-model="form.enrollmentPlan" placeholder="请输入年度招生计划" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="当前在读学生数" prop="currentStudents">
-              <el-input v-model="form.currentStudents" placeholder="请输入当前在读学生数" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="累计毕业生数" prop="graduateCount">
-              <el-input v-model="form.graduateCount" placeholder="请输入累计毕业生数" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="就业率" prop="employmentRate">
-              <el-input v-model="form.employmentRate" placeholder="请输入就业率" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="学费" prop="tuitionFee">
-              <el-input v-model="form.tuitionFee" placeholder="请输入学费" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="课程数量" prop="courseCount">
-              <el-input v-model="form.courseCount" placeholder="请输入课程数量" />
+              <el-input v-model="form.tuitionFee" placeholder="请输入学费，如：5000元/年">
+                <template #append>元/年</template>
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="实验室数量" prop="labCount">
-              <el-input v-model="form.labCount" placeholder="请输入实验室数量" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="显示顺序" prop="sortOrder">
-              <el-input v-model="form.sortOrder" placeholder="请输入显示顺序" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="实训基地" prop="trainingBase">
-              <el-input v-model="form.trainingBase" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="合作单位" prop="cooperationUnits">
-              <el-input v-model="form.cooperationUnits" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="专业特色" prop="majorFeatures">
-              <el-input v-model="form.majorFeatures" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="培养目标" prop="cultivationGoal">
-              <el-input v-model="form.cultivationGoal" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="主要课程" prop="mainCourses">
-              <el-input v-model="form.mainCourses" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="就业方向" prop="careerDirection">
-              <el-input v-model="form.careerDirection" type="textarea" placeholder="请输入内容" />
+              <el-input v-model="form.careerDirection" type="textarea" :rows="3" placeholder="请输入就业方向" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="专业简介" prop="introduction">
-              <el-input v-model="form.introduction" type="textarea" placeholder="请输入内容" />
+              <el-input v-model="form.introduction" type="textarea" :rows="4" placeholder="请输入专业简介" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
-                <el-radio v-for="dict in edu_major_status" :key="dict.value" :label="dict.value">{{ dict.label
-                  }}</el-radio>
+                <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
+                }}</el-radio>
               </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="24">
-            <el-form-item label="备注" prop="remark">
-              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -338,12 +166,13 @@ import { listSchool } from "@/api/edu/school"
 import { listCollege } from "@/api/edu/college"
 
 const { proxy } = getCurrentInstance()
-const { edu_major_type, edu_degree_type, edu_major_status } = proxy.useDict('edu_major_type', 'edu_degree_type', 'edu_major_status')
+const { sys_normal_disable } = proxy.useDict('sys_normal_disable')
 
 const majorList = ref([])
 const schoolList = ref([])
 const collegeList = ref([])
 const allCollegeList = ref([])
+const queryCollegeList = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
@@ -360,27 +189,13 @@ const data = reactive({
     pageSize: 10,
     schoolId: null,
     collegeId: null,
-    majorCode: null,
-    majorName: null,
-    majorCategory: null,
-    majorType: null,
-    isKeyMajor: null,
-    isFeaturedMajor: null,
-    isNationalMajor: null,
-    employmentRate: null,
-    status: null,
-    delFlag: null,
-    createTime: null,
   },
   rules: {
     schoolId: [
-      { required: true, message: "所属学校ID不能为空", trigger: "change" }
+      { required: true, message: "所属学校不能为空", trigger: "change" }
     ],
     collegeId: [
-      { required: true, message: "所属学院ID不能为空", trigger: "change" }
-    ],
-    majorCode: [
-      { required: true, message: "专业代码不能为空", trigger: "blur" }
+      { required: true, message: "所属学院不能为空", trigger: "change" }
     ],
     majorName: [
       { required: true, message: "专业名称不能为空", trigger: "blur" }
@@ -400,6 +215,22 @@ function getList() {
   })
 }
 
+/** 获取学校列表 */
+function getSchoolList() {
+  listSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+    schoolList.value = response.rows
+  })
+}
+
+/** 获取学院列表 */
+function getCollegeList() {
+  listCollege({ pageNum: 1, pageSize: 1000 }).then(response => {
+    allCollegeList.value = response.rows
+    collegeList.value = response.rows
+    queryCollegeList.value = response.rows
+  })
+}
+
 // 取消按钮
 function cancel() {
   open.value = false
@@ -412,43 +243,13 @@ function reset() {
     majorId: null,
     schoolId: null,
     collegeId: null,
-    majorCode: null,
     majorName: null,
-    majorNameEn: null,
-    majorCategory: null,
-    majorType: null,
-    degreeType: null,
-    educationYears: null,
+    educationYears: 4,
     degreeName: null,
-    isKeyMajor: null,
-    isFeaturedMajor: null,
-    isNationalMajor: null,
-    majorDirector: null,
-    directorPhone: null,
-    directorEmail: null,
-    establishedDate: null,
-    enrollmentPlan: null,
-    currentStudents: null,
-    graduateCount: null,
-    employmentRate: null,
     tuitionFee: null,
-    courseCount: null,
-    labCount: null,
-    trainingBase: null,
-    cooperationUnits: null,
-    majorFeatures: null,
-    cultivationGoal: null,
-    mainCourses: null,
     careerDirection: null,
     introduction: null,
-    sortOrder: null,
-    status: null,
-    delFlag: null,
-    createBy: null,
-    createTime: null,
-    updateBy: null,
-    updateTime: null,
-    remark: null
+    status: "0"
   }
   proxy.resetForm("majorRef")
 }
@@ -472,22 +273,7 @@ function handleSelectionChange(selection) {
   multiple.value = !selection.length
 }
 
-/** 获取学校列表 */
-function getSchoolList() {
-  listSchool().then(response => {
-    schoolList.value = response.rows
-  })
-}
-
-/** 获取学院列表 */
-function getCollegeList() {
-  listCollege().then(response => {
-    allCollegeList.value = response.rows
-    collegeList.value = response.rows
-  })
-}
-
-/** 学校改变时筛选学院 */
+/** 学校改变时筛选学院 - 表单中 */
 function handleSchoolChange(schoolId) {
   form.value.collegeId = null
   if (schoolId) {
@@ -497,11 +283,19 @@ function handleSchoolChange(schoolId) {
   }
 }
 
+/** 学校改变时筛选学院 - 搜索框中 */
+function handleSchoolChangeQuery(schoolId) {
+  queryParams.value.collegeId = null
+  if (schoolId) {
+    queryCollegeList.value = allCollegeList.value.filter(college => college.schoolId === schoolId)
+  } else {
+    queryCollegeList.value = allCollegeList.value
+  }
+}
+
 /** 新增按钮操作 */
 function handleAdd() {
   reset()
-  getSchoolList()
-  getCollegeList()
   open.value = true
   title.value = "添加专业信息"
 }
@@ -509,8 +303,6 @@ function handleAdd() {
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
-  getSchoolList()
-  getCollegeList()
   const _majorId = row.majorId || ids.value
   getMajor(_majorId).then(response => {
     form.value = response.data
@@ -562,5 +354,8 @@ function handleExport() {
   }, `major_${new Date().getTime()}.xlsx`)
 }
 
+// 初始化
 getList()
+getSchoolList()
+getCollegeList()
 </script>

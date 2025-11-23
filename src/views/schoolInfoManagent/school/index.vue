@@ -1,37 +1,13 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="80px">
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="学校代码" prop="schoolCode">
-            <el-input v-model="queryParams.schoolCode" placeholder="请输入学校代码" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
+      <el-row :gutter="12">
         <el-col :span="6">
           <el-form-item label="学校名称" prop="schoolName">
             <el-input v-model="queryParams.schoolName" placeholder="请输入学校名称" clearable @keyup.enter="handleQuery" />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label="学校类型" prop="schoolType">
-            <el-select v-model="queryParams.schoolType" placeholder="请选择学校类型" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_school_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="所在省份" prop="province">
-            <el-input v-model="queryParams.province" placeholder="请输入所在省份" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="所在城市" prop="city">
-            <el-input v-model="queryParams.city" placeholder="请输入所在城市" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="18" style="text-align: right;">
+        <el-col :span="10" style="text-align: right;">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -61,16 +37,28 @@
 
     <el-table v-loading="loading" :data="schoolList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="学校代码" align="center" prop="schoolCode" />
-      <el-table-column label="学校名称" align="center" prop="schoolName" />
-      <el-table-column label="学校类型" align="center" prop="schoolType">
+      <el-table-column label="ID" align="center" prop="schoolId" width="80" />
+      <el-table-column label="学校Logo" align="center" prop="logoUrl" width="100">
         <template #default="scope">
-          <dict-tag :options="edu_school_type" :value="scope.row.schoolType" />
+          <el-image v-if="scope.row.logoUrl" :src="scope.row.logoUrl" :preview-src-list="[scope.row.logoUrl]"
+            style="width: 50px; height: 50px;" fit="cover" />
+          <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column label="所在省份" align="center" prop="province" />
-      <el-table-column label="所在城市" align="center" prop="city" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="学校名称" align="center" prop="schoolName" min-width="120" />
+      <el-table-column label="省份" align="center" prop="province" width="100" />
+      <el-table-column label="城市" align="center" prop="city" width="100" />
+      <el-table-column label="区县" align="center" prop="district" width="100" />
+      <el-table-column label="详细地址" align="center" prop="address" min-width="150" show-overflow-tooltip />
+      <el-table-column label="经度" align="center" prop="longitude" width="100" />
+      <el-table-column label="纬度" align="center" prop="latitude" width="100" />
+      <el-table-column label="显示顺序" align="center" prop="sortOrder" width="100" />
+      <el-table-column label="状态" align="center" prop="status" width="80">
+        <template #default="scope">
+          <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['edu:school:edit']">修改</el-button>
@@ -84,54 +72,23 @@
       v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改学校信息对话框 -->
-    <el-dialog :title="title" v-model="open" width="1000px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="900px" append-to-body>
       <el-form ref="schoolRef" :model="form" :rules="rules" label-width="120px">
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="学校代码" prop="schoolCode">
-              <el-input v-model="form.schoolCode" placeholder="请输入学校代码（唯一标识）" />
+          <el-col :span="24">
+            <el-form-item label="学校Logo" prop="logoUrl">
+              <image-upload v-model="form.logoUrl" :limit="1" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="学校名称" prop="schoolName">
               <el-input v-model="form.schoolName" placeholder="请输入学校名称" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="学校英文名称" prop="schoolNameEn">
-              <el-input v-model="form.schoolNameEn" placeholder="请输入学校英文名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="学校类型" prop="schoolType">
-              <el-select v-model="form.schoolType" placeholder="请选择学校类型" style="width: 100%;">
-                <el-option v-for="dict in edu_school_type" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="学校层次" prop="schoolLevel">
-              <el-select v-model="form.schoolLevel" placeholder="请选择学校层次" style="width: 100%;">
-                <el-option v-for="dict in edu_school_level" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="办学性质" prop="schoolNature">
-              <el-select v-model="form.schoolNature" placeholder="请选择办学性质" style="width: 100%;">
-                <el-option v-for="dict in edu_school_nature" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
+        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="所在省份" prop="province">
               <el-input v-model="form.province" placeholder="请输入所在省份" />
@@ -148,111 +105,48 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="16">
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="详细地址" prop="address">
-              <el-input v-model="form.address" placeholder="请输入详细地址" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="邮政编码" prop="postalCode">
-              <el-input v-model="form.postalCode" placeholder="请输入邮政编码" />
+              <el-input v-model="form.address" placeholder="请输入详细地址">
+                <template #append>
+                  <el-button @click="showMapDialog = true">地图选择</el-button>
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="经度" prop="longitude">
-              <el-input v-model="form.longitude" placeholder="请输入经度" />
+              <el-input v-model="form.longitude" placeholder="点击地图选择位置自动填充" readonly />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="纬度" prop="latitude">
-              <el-input v-model="form.latitude" placeholder="请输入纬度" />
+              <el-input v-model="form.latitude" placeholder="点击地图选择位置自动填充" readonly />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="联系电话" prop="contactPhone">
-              <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="联系邮箱" prop="contactEmail">
-              <el-input v-model="form.contactEmail" placeholder="请输入联系邮箱" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
+        <el-row :gutter="20">
           <el-col :span="24">
-            <el-form-item label="官方网站" prop="website">
-              <el-input v-model="form.website" placeholder="请输入官方网站" />
+            <el-form-item label="学校简介" prop="introduction">
+              <el-input v-model="form.introduction" type="textarea" :rows="4" placeholder="请输入学校简介" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="8">
-            <el-form-item label="建校日期" prop="establishedDate">
-              <el-date-picker clearable v-model="form.establishedDate" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择建校日期" style="width: 100%;">
-              </el-date-picker>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="校长姓名" prop="principal">
-              <el-input v-model="form.principal" placeholder="请输入校长姓名" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="党委书记" prop="partySecretary">
-              <el-input v-model="form.partySecretary" placeholder="请输入党委书记" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="在校学生数" prop="studentCount">
-              <el-input v-model="form.studentCount" placeholder="请输入在校学生数" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="教职工数" prop="teacherCount">
-              <el-input v-model="form.teacherCount" placeholder="请输入教职工数" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="校徽图片URL" prop="logoUrl">
-              <el-input v-model="form.logoUrl" placeholder="请输入校徽图片URL" />
-            </el-form-item>
-          </el-col>
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="显示顺序" prop="sortOrder">
-              <el-input v-model="form.sortOrder" placeholder="请输入显示顺序" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="学校简介" prop="introduction">
-              <el-input v-model="form.introduction" type="textarea" placeholder="请输入学校简介" />
+              <el-input-number v-model="form.sortOrder" :min="0" controls-position="right" style="width: 100%;" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
                 <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
-                }}</el-radio>
+                  }}</el-radio>
               </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="24">
-            <el-form-item label="备注" prop="remark">
-              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -264,14 +158,38 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 地图选择对话框 -->
+    <el-dialog title="地图选择位置" v-model="showMapDialog" width="800px" append-to-body>
+      <div class="map-container">
+        <el-input v-model="mapSearchKeyword" placeholder="搜索地点" class="map-search" @keyup.enter="searchLocation">
+          <template #append>
+            <el-button icon="Search" @click="searchLocation">搜索</el-button>
+          </template>
+        </el-input>
+        <div id="amap-container" style="width: 100%; height: 500px; margin-top: 10px;"></div>
+        <div class="map-info" v-if="selectedLocation.address">
+          <p><strong>选中位置：</strong>{{ selectedLocation.address }}</p>
+          <p><strong>经度：</strong>{{ selectedLocation.longitude }} <strong>纬度：</strong>{{ selectedLocation.latitude }}
+          </p>
+        </div>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="confirmLocation">确认位置</el-button>
+          <el-button @click="showMapDialog = false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="School">
 import { listSchool, getSchool, delSchool, addSchool, updateSchool } from "@/api/edu/school"
+import ImageUpload from '@/components/ImageUpload'
 
 const { proxy } = getCurrentInstance()
-const { edu_school_type, edu_school_level, edu_school_nature, sys_normal_disable } = proxy.useDict('edu_school_type', 'edu_school_level', 'edu_school_nature', 'sys_normal_disable')
+const { sys_normal_disable } = proxy.useDict('sys_normal_disable')
 
 const schoolList = ref([])
 const open = ref(false)
@@ -283,27 +201,33 @@ const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
 
+// 地图相关
+const showMapDialog = ref(false)
+const mapSearchKeyword = ref("")
+const mapInstance = ref(null)
+const markerInstance = ref(null)
+const selectedLocation = ref({
+  address: "",
+  longitude: "",
+  latitude: "",
+  province: "",
+  city: "",
+  district: ""
+})
+
 const data = reactive({
   form: {},
   queryParams: {
     pageNum: 1,
     pageSize: 10,
-    schoolCode: null,
     schoolName: null,
-    schoolType: null,
-    province: null,
-    city: null,
-    status: null,
   },
   rules: {
-    schoolCode: [
-      { required: true, message: "学校代码不能为空", trigger: "blur" }
-    ],
     schoolName: [
       { required: true, message: "学校名称不能为空", trigger: "blur" }
     ],
-    schoolType: [
-      { required: true, message: "学校类型不能为空", trigger: "change" }
+    logoUrl: [
+      { required: true, message: "学校Logo不能为空", trigger: "blur" }
     ],
   }
 })
@@ -330,40 +254,146 @@ function cancel() {
 function reset() {
   form.value = {
     schoolId: null,
-    schoolCode: null,
     schoolName: null,
-    schoolNameEn: null,
-    schoolType: null,
-    schoolLevel: null,
-    schoolNature: null,
     province: null,
     city: null,
     district: null,
     address: null,
-    postalCode: null,
     longitude: null,
     latitude: null,
-    contactPhone: null,
-    contactEmail: null,
-    website: null,
-    establishedDate: null,
-    principal: null,
-    partySecretary: null,
-    studentCount: null,
-    teacherCount: null,
     logoUrl: null,
     introduction: null,
-    sortOrder: null,
-    status: null,
-    delFlag: null,
-    createBy: null,
-    createTime: null,
-    updateBy: null,
-    updateTime: null,
-    remark: null
+    sortOrder: 0,
+    status: "0"
   }
   proxy.resetForm("schoolRef")
 }
+
+// 初始化高德地图
+function initAMap() {
+  // 动态加载高德地图API
+  if (!window.AMap) {
+    const script = document.createElement('script')
+    script.src = 'https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_KEY&plugin=AMap.PlaceSearch,AMap.Geocoder'
+    script.onload = () => {
+      createMap()
+    }
+    document.head.appendChild(script)
+  } else {
+    createMap()
+  }
+}
+
+// 创建地图实例
+function createMap() {
+  nextTick(() => {
+    if (!mapInstance.value) {
+      mapInstance.value = new AMap.Map('amap-container', {
+        zoom: 13,
+        center: [form.value.longitude || 116.397428, form.value.latitude || 39.90923],
+        viewMode: '3D'
+      })
+
+      // 添加点击事件
+      mapInstance.value.on('click', (e) => {
+        const { lng, lat } = e.lnglat
+        updateMarker(lng, lat)
+
+        // 逆地理编码获取地址信息
+        const geocoder = new AMap.Geocoder()
+        geocoder.getAddress([lng, lat], (status, result) => {
+          if (status === 'complete' && result.info === 'OK') {
+            const addressComponent = result.regeocode.addressComponent
+            selectedLocation.value = {
+              address: result.regeocode.formattedAddress,
+              longitude: lng.toFixed(6),
+              latitude: lat.toFixed(6),
+              province: addressComponent.province,
+              city: addressComponent.city,
+              district: addressComponent.district
+            }
+          }
+        })
+      })
+    }
+
+    // 如果有经纬度，显示标记
+    if (form.value.longitude && form.value.latitude) {
+      updateMarker(form.value.longitude, form.value.latitude)
+      mapInstance.value.setCenter([form.value.longitude, form.value.latitude])
+    }
+  })
+}
+
+// 更新地图标记
+function updateMarker(lng, lat) {
+  if (markerInstance.value) {
+    markerInstance.value.setPosition([lng, lat])
+  } else {
+    markerInstance.value = new AMap.Marker({
+      position: [lng, lat],
+      map: mapInstance.value
+    })
+  }
+}
+
+// 搜索地点
+function searchLocation() {
+  if (!mapSearchKeyword.value) {
+    proxy.$modal.msgWarning('请输入搜索关键词')
+    return
+  }
+
+  const placeSearch = new AMap.PlaceSearch({
+    map: mapInstance.value
+  })
+
+  placeSearch.search(mapSearchKeyword.value, (status, result) => {
+    if (status === 'complete' && result.poiList.pois.length > 0) {
+      const poi = result.poiList.pois[0]
+      const { lng, lat } = poi.location
+
+      updateMarker(lng, lat)
+      mapInstance.value.setCenter([lng, lat])
+
+      selectedLocation.value = {
+        address: poi.address + poi.name,
+        longitude: lng.toFixed(6),
+        latitude: lat.toFixed(6),
+        province: poi.pname,
+        city: poi.cityname,
+        district: poi.adname
+      }
+    } else {
+      proxy.$modal.msgError('未找到相关地点')
+    }
+  })
+}
+
+// 确认位置
+function confirmLocation() {
+  if (!selectedLocation.value.longitude) {
+    proxy.$modal.msgWarning('请先在地图上选择位置')
+    return
+  }
+
+  form.value.longitude = selectedLocation.value.longitude
+  form.value.latitude = selectedLocation.value.latitude
+  form.value.province = selectedLocation.value.province
+  form.value.city = selectedLocation.value.city
+  form.value.district = selectedLocation.value.district
+  form.value.address = selectedLocation.value.address
+
+  showMapDialog.value = false
+  proxy.$modal.msgSuccess('位置已填充')
+}
+
+// 监听地图对话框打开
+watch(showMapDialog, (val) => {
+  if (val) {
+    initAMap()
+  }
+})
 
 /** 搜索按钮操作 */
 function handleQuery() {
@@ -443,3 +473,29 @@ function handleExport() {
 
 getList()
 </script>
+
+<style lang="scss" scoped>
+.map-container {
+  .map-search {
+    width: 100%;
+  }
+
+  .map-info {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f5f7fa;
+    border-radius: 4px;
+
+    p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #606266;
+    }
+  }
+}
+
+#amap-container {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+</style>
