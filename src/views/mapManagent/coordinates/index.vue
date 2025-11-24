@@ -11,31 +11,11 @@
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="地标编码" prop="landmarkCode">
-            <el-input v-model="queryParams.landmarkCode" placeholder="请输入地标编码" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
           <el-form-item label="地标名称" prop="landmarkName">
             <el-input v-model="queryParams.landmarkName" placeholder="请输入地标名称" clearable @keyup.enter="handleQuery" />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label="是否无障碍设施" prop="isAccessible">
-            <el-select v-model="queryParams.isAccessible" placeholder="请选择是否无障碍设施" clearable style="width: 100%;">
-              <el-option v-for="dict in sys_yes_no" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="8">
-          <el-form-item label="创建时间">
-            <el-date-picker v-model="daterangeCreateTime" value-format="YYYY-MM-DD" type="daterange" range-separator="-"
-              start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
-        <el-col :span="16" style="text-align: right;">
+        <el-col :span="12" style="text-align: right;">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -65,15 +45,15 @@
 
     <el-table v-loading="loading" :data="landmarkList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="地标编码" align="center" prop="landmarkCode" />
-      <el-table-column label="地标名称" align="center" prop="landmarkName" />
-      <el-table-column label="经度" align="center" prop="longitude" />
-      <el-table-column label="纬度" align="center" prop="latitude" />
-      <el-table-column label="是否无障碍设施" align="center" prop="isAccessible">
+      <el-table-column label="所属学校" align="center" prop="schoolId">
         <template #default="scope">
-          <dict-tag :options="sys_yes_no" :value="scope.row.isAccessible" />
+          <span>{{schoolOptions.find(s => s.schoolId === scope.row.schoolId)?.schoolName || scope.row.schoolId
+          }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="地标名称" align="center" prop="landmarkName" />
+      <el-table-column label="地标简介" align="center" prop="introduction" show-overflow-tooltip />
+      <el-table-column label="备注" align="center" prop="remark" show-overflow-tooltip />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
@@ -100,94 +80,35 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="地标编码" prop="landmarkCode">
-              <el-input v-model="form.landmarkCode" placeholder="请输入地标编码" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
             <el-form-item label="地标名称" prop="landmarkName">
               <el-input v-model="form.landmarkName" placeholder="请输入地标名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="地标英文名称" prop="landmarkNameEn">
-              <el-input v-model="form.landmarkNameEn" placeholder="请输入地标英文名称" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="经度" prop="longitude">
-              <el-input v-model="form.longitude" placeholder="请输入经度" />
+              <el-input v-model="form.longitude" placeholder="点击地图选择位置自动填充" readonly @click="showMapDialog = true">
+                <template #append>
+                  <el-button icon="Location" @click="showMapDialog = true" />
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="纬度" prop="latitude">
-              <el-input v-model="form.latitude" placeholder="请输入纬度" />
+              <el-input v-model="form.latitude" placeholder="点击地图选择位置自动填充" readonly @click="showMapDialog = true">
+                <template #append>
+                  <el-button icon="Location" @click="showMapDialog = true" />
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="楼层数" prop="floorCount">
-              <el-input v-model="form.floorCount" placeholder="请输入楼层数" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="建筑面积" prop="buildingArea">
-              <el-input v-model="form.buildingArea" placeholder="请输入建筑面积" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="联系电话" prop="contactPhone">
-              <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="负责人" prop="contactPerson">
-              <el-input v-model="form.contactPerson" placeholder="请输入负责人" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="开放时间" prop="openingHours">
-              <el-input v-model="form.openingHours" placeholder="请输入开放时间" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="显示顺序" prop="sortOrder">
-              <el-input v-model="form.sortOrder" placeholder="请输入显示顺序" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="地标图片URL" prop="imageUrl">
-              <image-upload v-model="form.imageUrl" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="地标图标URL" prop="iconUrl">
-              <image-upload v-model="form.iconUrl" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="地标简介" prop="introduction">
               <el-input v-model="form.introduction" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="是否无障碍设施" prop="isAccessible">
-              <el-radio-group v-model="form.isAccessible">
-                <el-radio v-for="dict in sys_yes_no" :key="dict.value" :label="dict.value">{{ dict.label }}</el-radio>
-              </el-radio-group>
             </el-form-item>
           </el-col>
         </el-row>
@@ -206,12 +127,36 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 地图选择对话框 -->
+    <el-dialog title="地图选择位置" v-model="showMapDialog" width="800px" append-to-body>
+      <div class="map-container">
+        <el-input v-model="mapSearchKeyword" placeholder="搜索地点" class="map-search" @keyup.enter="searchLocation">
+          <template #append>
+            <el-button icon="Search" @click="searchLocation">搜索</el-button>
+          </template>
+        </el-input>
+        <div id="amap-container" style="width: 100%; height: 500px; margin-top: 10px;"></div>
+        <div class="map-info" v-if="selectedLocation.address">
+          <p><strong>选中位置：</strong>{{ selectedLocation.address }}</p>
+          <p><strong>经度：</strong>{{ selectedLocation.longitude }} <strong>纬度：</strong>{{ selectedLocation.latitude }}
+          </p>
+        </div>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="confirmLocation">确认位置</el-button>
+          <el-button @click="showMapDialog = false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Landmark">
 import { listLandmark, getLandmark, delLandmark, addLandmark, updateLandmark } from "@/api/edu/landmark"
 import { listSchool } from "@/api/edu/school"
+import { loadAMap } from "@/utils/amap"
 
 const { proxy } = getCurrentInstance()
 const { sys_yes_no } = proxy.useDict('sys_yes_no')
@@ -226,7 +171,29 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
-const daterangeCreateTime = ref([])
+
+// 地图相关
+const showMapDialog = ref(false)
+const mapSearchKeyword = ref("")
+const mapInstance = ref(null)
+const markerInstance = ref(null)
+const selectedLocation = ref({
+  address: "",
+  longitude: "",
+  latitude: "",
+  province: "",
+  city: "",
+  district: ""
+})
+
+const DEFAULT_LOCATION = {
+  longitude: 104.464508,
+  latitude: 30.845427,
+  address: "",
+  province: "",
+  city: "",
+  district: ""
+}
 
 const data = reactive({
   form: {},
@@ -234,11 +201,7 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     schoolId: null,
-    landmarkCode: null,
     landmarkName: null,
-    isAccessible: null,
-    status: null,
-    createTime: null,
   },
   rules: {
     landmarkName: [
@@ -250,9 +213,6 @@ const data = reactive({
     latitude: [
       { required: true, message: "纬度不能为空", trigger: "blur" }
     ],
-    status: [
-      { required: true, message: "状态不能为空", trigger: "change" }
-    ],
   }
 })
 
@@ -261,11 +221,6 @@ const { queryParams, form, rules } = toRefs(data)
 /** 查询地图地标信息列表 */
 function getList() {
   loading.value = true
-  queryParams.value.params = {}
-  if (null != daterangeCreateTime && '' != daterangeCreateTime) {
-    queryParams.value.params["beginCreateTime"] = daterangeCreateTime.value[0]
-    queryParams.value.params["endCreateTime"] = daterangeCreateTime.value[1]
-  }
   listLandmark(queryParams.value).then(response => {
     landmarkList.value = response.rows
     total.value = response.total
@@ -291,27 +246,10 @@ function reset() {
   form.value = {
     landmarkId: null,
     schoolId: null,
-    landmarkCode: null,
     landmarkName: null,
-    landmarkNameEn: null,
     introduction: null,
     longitude: null,
     latitude: null,
-    imageUrl: null,
-    iconUrl: null,
-    floorCount: null,
-    buildingArea: null,
-    contactPhone: null,
-    contactPerson: null,
-    openingHours: null,
-    isAccessible: null,
-    sortOrder: null,
-    status: null,
-    delFlag: null,
-    createBy: null,
-    createTime: null,
-    updateBy: null,
-    updateTime: null,
     remark: null
   }
   proxy.resetForm("landmarkRef")
@@ -325,7 +263,6 @@ function handleQuery() {
 
 /** 重置按钮操作 */
 function resetQuery() {
-  daterangeCreateTime.value = []
   proxy.resetForm("queryRef")
   handleQuery()
 }
@@ -394,6 +331,236 @@ function handleExport() {
   }, `landmark_${new Date().getTime()}.xlsx`)
 }
 
-getList()
+function findSchoolById(id) {
+  if (id === undefined || id === null || id === '') {
+    return null
+  }
+  return schoolOptions.value.find(item => String(item.schoolId) === String(id)) || null
+}
+
+function getSchoolLocation() {
+  const school = findSchoolById(form.value.schoolId)
+  if (school) {
+    const lng = parseFloat(school.longitude)
+    const lat = parseFloat(school.latitude)
+    if (!isNaN(lng) && !isNaN(lat)) {
+      return {
+        longitude: lng,
+        latitude: lat,
+        address: school.schoolName || "",
+        province: school.province || "",
+        city: school.city || "",
+        district: school.district || ""
+      }
+    }
+  }
+  return null
+}
+
+function getInitialLocation() {
+  const lng = parseFloat(form.value.longitude)
+  const lat = parseFloat(form.value.latitude)
+  if (!isNaN(lng) && !isNaN(lat)) {
+    return {
+      longitude: lng,
+      latitude: lat,
+      address: selectedLocation.value.address || form.value.landmarkName || "",
+      province: selectedLocation.value.province || "",
+      city: selectedLocation.value.city || "",
+      district: selectedLocation.value.district || ""
+    }
+  }
+
+  const schoolLocation = getSchoolLocation()
+  if (schoolLocation) {
+    return schoolLocation
+  }
+
+  return DEFAULT_LOCATION
+}
+
+function formatSelectedLocation(location, fallbackAddress = "") {
+  const lng = Number(location.longitude)
+  const lat = Number(location.latitude)
+  return {
+    address: location.address || fallbackAddress,
+    longitude: !isNaN(lng) ? lng.toFixed(6) : "",
+    latitude: !isNaN(lat) ? lat.toFixed(6) : "",
+    province: location.province || "",
+    city: location.city || "",
+    district: location.district || ""
+  }
+}
+
+function reverseGeocodeAndSet(lng, lat, fallbackAddress = "") {
+  if (isNaN(lng) || isNaN(lat)) {
+    return
+  }
+
+  const geocoder = new AMap.Geocoder()
+  geocoder.getAddress([lng, lat], (status, result) => {
+    if (status === 'complete' && result.info === 'OK') {
+      const addressComponent = result.regeocode.addressComponent
+      selectedLocation.value = formatSelectedLocation({
+        address: result.regeocode.formattedAddress,
+        longitude: lng,
+        latitude: lat,
+        province: addressComponent.province,
+        city: addressComponent.city,
+        district: addressComponent.district
+      })
+    } else {
+      selectedLocation.value = formatSelectedLocation({
+        longitude: lng,
+        latitude: lat,
+      }, fallbackAddress)
+    }
+  })
+}
+
+// 初始化高德地图
+function initAMap() {
+  loadAMap().then(() => {
+    createMap()
+  }).catch(e => {
+    console.error(e)
+    proxy.$modal.msgError("地图加载失败，请检查Key配置")
+  })
+}
+
+// 创建地图实例
+function createMap() {
+  nextTick(() => {
+    const initialLocation = getInitialLocation()
+    const center = [initialLocation.longitude, initialLocation.latitude]
+
+    mapInstance.value = new AMap.Map('amap-container', {
+      zoom: 16,
+      center: center,
+      viewMode: '2D'
+    })
+
+    // 添加点击事件
+    mapInstance.value.on('click', (e) => {
+      const { lng, lat } = e.lnglat
+      updateMarker(lng, lat)
+      reverseGeocodeAndSet(lng, lat)
+    })
+
+    updateMarker(initialLocation.longitude, initialLocation.latitude)
+    if (initialLocation.address) {
+      selectedLocation.value = formatSelectedLocation(initialLocation, initialLocation.address)
+    } else {
+      reverseGeocodeAndSet(initialLocation.longitude, initialLocation.latitude, DEFAULT_LOCATION.address)
+    }
+  })
+}
+
+// 更新地图标记
+function updateMarker(lng, lat) {
+  if (markerInstance.value) {
+    markerInstance.value.setPosition([lng, lat])
+  } else {
+    markerInstance.value = new AMap.Marker({
+      position: [lng, lat],
+      map: mapInstance.value
+    })
+  }
+}
+
+// 搜索地点
+function searchLocation() {
+  if (!mapSearchKeyword.value) {
+    proxy.$modal.msgWarning('请输入搜索关键词')
+    return
+  }
+
+  const placeSearch = new AMap.PlaceSearch({
+    map: mapInstance.value
+  })
+
+  placeSearch.search(mapSearchKeyword.value, (status, result) => {
+    if (status === 'complete' && result.poiList.pois.length > 0) {
+      const poi = result.poiList.pois[0]
+      const { lng, lat } = poi.location
+
+      updateMarker(lng, lat)
+      mapInstance.value.setCenter([lng, lat])
+
+      selectedLocation.value = {
+        address: poi.address + poi.name,
+        longitude: lng.toFixed(6),
+        latitude: lat.toFixed(6),
+        province: poi.pname,
+        city: poi.cityname,
+        district: poi.adname
+      }
+    } else {
+      if (result && result.info === 'USERKEY_PLAT_NOMATCH') {
+        proxy.$modal.msgError('高德地图Key类型不匹配，请使用Web端(JS API)类型的Key')
+      } else {
+        proxy.$modal.msgError('未找到相关地点')
+      }
+    }
+  })
+}
+
+// 确认位置
+function confirmLocation() {
+  if (!selectedLocation.value.longitude) {
+    proxy.$modal.msgWarning('请先在地图上选择位置')
+    return
+  }
+
+  form.value.longitude = selectedLocation.value.longitude
+  form.value.latitude = selectedLocation.value.latitude
+
+  showMapDialog.value = false
+  proxy.$modal.msgSuccess('位置已填充')
+}
+
+watch(() => form.value.schoolId, () => {
+  if (!showMapDialog.value || !mapInstance.value) {
+    return
+  }
+
+  const formLng = parseFloat(form.value.longitude)
+  const formLat = parseFloat(form.value.latitude)
+  const hasFormLocation = !isNaN(formLng) && !isNaN(formLat)
+  if (hasFormLocation) {
+    return
+  }
+
+  const schoolLocation = getSchoolLocation()
+  if (schoolLocation) {
+    mapInstance.value.setCenter([schoolLocation.longitude, schoolLocation.latitude])
+    updateMarker(schoolLocation.longitude, schoolLocation.latitude)
+    const school = findSchoolById(form.value.schoolId)
+    const fallbackAddress = school?.schoolName || DEFAULT_LOCATION.address
+    if (schoolLocation.address) {
+      selectedLocation.value = formatSelectedLocation(schoolLocation, fallbackAddress)
+    } else {
+      reverseGeocodeAndSet(schoolLocation.longitude, schoolLocation.latitude, fallbackAddress)
+    }
+  }
+})
+
+// 监听地图对话框打开
+watch(showMapDialog, (val) => {
+  if (val) {
+    initAMap()
+  } else {
+    // 关闭时销毁地图实例
+    if (mapInstance.value) {
+      mapInstance.value.destroy()
+      mapInstance.value = null
+    }
+    if (markerInstance.value) {
+      markerInstance.value = null
+    }
+  }
+})
+
 getSchoolList()
+getList()
 </script>

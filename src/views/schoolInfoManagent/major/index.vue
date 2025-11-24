@@ -1,16 +1,7 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="80px">
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="所属学校" prop="schoolId">
-            <el-select v-model="queryParams.schoolId" placeholder="请选择学校" clearable filterable
-              @change="handleSchoolChangeQuery" style="width: 100%;">
-              <el-option v-for="school in schoolList" :key="school.schoolId" :label="school.schoolName"
-                :value="school.schoolId"></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
+      <el-row :gutter="10">
         <el-col :span="6">
           <el-form-item label="所属学院" prop="collegeId">
             <el-select v-model="queryParams.collegeId" placeholder="请选择学院" clearable filterable style="width: 100%;">
@@ -19,7 +10,7 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="12" style="text-align: right;">
+        <el-col :span="6">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -50,6 +41,8 @@
     <el-table v-loading="loading" :data="majorList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="majorId" width="80" />
+      <el-table-column label="所属学校" align="center" prop="schoolName" width="140" />
+      <el-table-column label="所属学院" align="center" prop="collegeName" width="140" />
       <el-table-column label="专业名称" align="center" prop="majorName" min-width="120" />
       <el-table-column label="学制年限" align="center" prop="educationYears" width="100" />
       <el-table-column label="授予学位" align="center" prop="degreeName" width="120" />
@@ -78,16 +71,7 @@
     <el-dialog :title="title" v-model="open" width="800px" append-to-body>
       <el-form ref="majorRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="所属学校" prop="schoolId">
-              <el-select v-model="form.schoolId" placeholder="请选择所属学校" clearable filterable @change="handleSchoolChange"
-                style="width: 100%;">
-                <el-option v-for="school in schoolList" :key="school.schoolId" :label="school.schoolName"
-                  :value="school.schoolId"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="所属学院" prop="collegeId">
               <el-select v-model="form.collegeId" placeholder="请选择所属学院" clearable filterable style="width: 100%;">
                 <el-option v-for="college in collegeList" :key="college.collegeId" :label="college.collegeName"
@@ -164,9 +148,11 @@
 import { listMajor, getMajor, delMajor, addMajor, updateMajor } from "@/api/edu/major"
 import { listSchool } from "@/api/edu/school"
 import { listCollege } from "@/api/edu/college"
+import useUserStore from '@/store/modules/user'
 
 const { proxy } = getCurrentInstance()
 const { sys_normal_disable } = proxy.useDict('sys_normal_disable')
+const userStore = useUserStore()
 
 const majorList = ref([])
 const schoolList = ref([])
@@ -182,18 +168,17 @@ const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
 
+// 从用户信息中获取学校ID
+const currentSchoolId = computed(() => userStore.schoolInfo?.schoolId || null)
+
 const data = reactive({
   form: {},
   queryParams: {
     pageNum: 1,
     pageSize: 10,
-    schoolId: null,
     collegeId: null,
   },
   rules: {
-    schoolId: [
-      { required: true, message: "所属学校不能为空", trigger: "change" }
-    ],
     collegeId: [
       { required: true, message: "所属学院不能为空", trigger: "change" }
     ],
@@ -208,7 +193,12 @@ const { queryParams, form, rules } = toRefs(data)
 /** 查询专业信息列表 */
 function getList() {
   loading.value = true
-  listMajor(queryParams.value).then(response => {
+  // 自动添加学校ID到查询参数
+  const params = {
+    ...queryParams.value,
+    schoolId: currentSchoolId.value
+  }
+  listMajor(params).then(response => {
     majorList.value = response.rows
     total.value = response.total
     loading.value = false
@@ -224,7 +214,13 @@ function getSchoolList() {
 
 /** 获取学院列表 */
 function getCollegeList() {
-  listCollege({ pageNum: 1, pageSize: 1000 }).then(response => {
+  // 只获取当前学校的学院
+  const params = {
+    pageNum: 1,
+    pageSize: 1000,
+    schoolId: currentSchoolId.value
+  }
+  listCollege(params).then(response => {
     allCollegeList.value = response.rows
     collegeList.value = response.rows
     queryCollegeList.value = response.rows
@@ -241,7 +237,7 @@ function cancel() {
 function reset() {
   form.value = {
     majorId: null,
-    schoolId: null,
+    schoolId: currentSchoolId.value, // 自动填充当前用户的学校ID
     collegeId: null,
     majorName: null,
     educationYears: 4,
@@ -273,26 +269,6 @@ function handleSelectionChange(selection) {
   multiple.value = !selection.length
 }
 
-/** 学校改变时筛选学院 - 表单中 */
-function handleSchoolChange(schoolId) {
-  form.value.collegeId = null
-  if (schoolId) {
-    collegeList.value = allCollegeList.value.filter(college => college.schoolId === schoolId)
-  } else {
-    collegeList.value = allCollegeList.value
-  }
-}
-
-/** 学校改变时筛选学院 - 搜索框中 */
-function handleSchoolChangeQuery(schoolId) {
-  queryParams.value.collegeId = null
-  if (schoolId) {
-    queryCollegeList.value = allCollegeList.value.filter(college => college.schoolId === schoolId)
-  } else {
-    queryCollegeList.value = allCollegeList.value
-  }
-}
-
 /** 新增按钮操作 */
 function handleAdd() {
   reset()
@@ -306,10 +282,8 @@ function handleUpdate(row) {
   const _majorId = row.majorId || ids.value
   getMajor(_majorId).then(response => {
     form.value = response.data
-    // 根据已选择的学校ID筛选学院列表
-    if (form.value.schoolId) {
-      collegeList.value = allCollegeList.value.filter(college => college.schoolId === form.value.schoolId)
-    }
+    // 确保学校ID是当前用户的学校ID
+    form.value.schoolId = currentSchoolId.value
     open.value = true
     title.value = "修改专业信息"
   })
@@ -319,6 +293,9 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["majorRef"].validate(valid => {
     if (valid) {
+      // 确保提交时包含学校ID
+      form.value.schoolId = currentSchoolId.value
+
       if (form.value.majorId != null) {
         updateMajor(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功")
@@ -356,6 +333,5 @@ function handleExport() {
 
 // 初始化
 getList()
-getSchoolList()
 getCollegeList()
 </script>

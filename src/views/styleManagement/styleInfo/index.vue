@@ -1,7 +1,15 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="80px">
+    <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="100px">
       <el-row :gutter="20">
+        <el-col :span="6">
+          <el-form-item label="所属学校" prop="schoolId">
+            <el-select v-model="queryParams.schoolId" placeholder="请选择所属学校" clearable filterable style="width: 100%;">
+              <el-option v-for="school in schoolList" :key="school.schoolId" :label="school.schoolName"
+                :value="school.schoolId" />
+            </el-select>
+          </el-form-item>
+        </el-col>
         <el-col :span="6">
           <el-form-item label="风采名称" prop="showcaseName">
             <el-input v-model="queryParams.showcaseName" placeholder="请输入风采名称" clearable @keyup.enter="handleQuery" />
@@ -15,52 +23,13 @@
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="展示时间">
-            <el-date-picker v-model="daterangeDisplayTime" value-format="YYYY-MM-DD" type="daterange"
-              range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="获奖时间" prop="awardTime">
-            <el-date-picker clearable v-model="queryParams.awardTime" type="date" value-format="YYYY-MM-DD"
-              placeholder="请选择获奖时间" style="width: 100%;">
-            </el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="6">
           <el-form-item label="获奖级别" prop="awardLevel">
             <el-input v-model="queryParams.awardLevel" placeholder="请输入获奖级别" clearable @keyup.enter="handleQuery" />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label="所属学校ID" prop="schoolId">
-            <el-input v-model="queryParams.schoolId" placeholder="请输入所属学校ID" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="是否推荐" prop="isRecommended">
-            <el-select v-model="queryParams.isRecommended" placeholder="请选择是否推荐" clearable style="width: 100%;">
-              <el-option v-for="dict in sys_yes_no" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 100%;">
-              <el-option v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
       </el-row>
       <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="创建时间">
-            <el-date-picker v-model="daterangeCreateTime" value-format="YYYY-MM-DD" type="daterange" range-separator="-"
-              start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
+
         <el-col :span="18" style="text-align: right;">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -91,29 +60,27 @@
 
     <el-table v-loading="loading" :data="showcaseList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="风采ID" align="center" prop="showcaseId" />
-      <el-table-column label="风采名称" align="center" prop="showcaseName" />
-      <el-table-column label="风采类型" align="center" prop="showcaseType">
+      <el-table-column label="风采名称" align="center" prop="showcaseName" min-width="150" show-overflow-tooltip />
+      <el-table-column label="风采类型" align="center" prop="showcaseType" width="120">
         <template #default="scope">
           <dict-tag :options="edu_showcase_type" :value="scope.row.showcaseType" />
         </template>
       </el-table-column>
-      <el-table-column label="展示时间" align="center" prop="displayTime" width="180">
+      <el-table-column label="所属学校" align="center" prop="schoolName" min-width="120" show-overflow-tooltip />
+      <el-table-column label="展示时间" align="center" prop="displayTime" width="120">
         <template #default="scope">
           <span>{{ parseTime(scope.row.displayTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="是否推荐" align="center" prop="isRecommended">
-        <template #default="scope">
-          <dict-tag :options="sys_yes_no" :value="scope.row.isRecommended" />
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" align="center" prop="status">
+      <el-table-column label="获奖级别" align="center" prop="awardLevel" width="120" />
+      <el-table-column label="浏览量" align="center" prop="viewCount" width="100" />
+
+      <el-table-column label="状态" align="center" prop="status" width="80">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['edu:showcase:edit']">修改</el-button>
@@ -144,7 +111,15 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="所属学校" prop="schoolId">
+              <el-select v-model="form.schoolId" placeholder="请选择所属学校" filterable style="width: 100%;">
+                <el-option v-for="school in schoolList" :key="school.schoolId" :label="school.schoolName"
+                  :value="school.schoolId"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
             <el-form-item label="展示时间" prop="displayTime">
               <el-date-picker clearable v-model="form.displayTime" type="date" value-format="YYYY-MM-DD"
@@ -152,97 +127,38 @@
               </el-date-picker>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="获奖时间" prop="awardTime">
-              <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择获奖时间" style="width: 100%;">
-              </el-date-picker>
-            </el-form-item>
-          </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
+
+        <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="获奖级别" prop="awardLevel">
-              <el-input v-model="form.awardLevel" placeholder="请输入获奖级别" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="颁发单位" prop="awardOrganization">
-              <el-input v-model="form.awardOrganization" placeholder="请输入颁发单位" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="所属学校ID" prop="schoolId">
-              <el-input v-model="form.schoolId" placeholder="请输入所属学校ID" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="显示顺序" prop="sortOrder">
-              <el-input v-model="form.sortOrder" placeholder="请输入显示顺序" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="是否推荐" prop="isRecommended">
-              <el-radio-group v-model="form.isRecommended">
-                <el-radio v-for="dict in sys_yes_no" :key="dict.value" :label="dict.value">{{ dict.label }}</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态" prop="status">
-              <el-radio-group v-model="form.status">
-                <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
-                }}</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="封面图片URL" prop="coverImageUrl">
+            <el-form-item label="封面图片" prop="coverImageUrl">
               <image-upload v-model="form.coverImageUrl" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="展示信息" prop="displayInfo">
-              <el-input v-model="form.displayInfo" type="textarea" placeholder="请输入内容" />
+            <el-form-item label="图片轮播图" prop="imageUrls">
+              <image-upload v-model="form.imageUrls" :limit="9" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="图片列表" prop="imageUrls">
-              <el-input v-model="form.imageUrls" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="视频URL" prop="videoUrl">
-              <el-input v-model="form.videoUrl" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
+        <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="简介" prop="introduction">
-              <el-input v-model="form.introduction" type="textarea" placeholder="请输入内容" />
+              <el-input v-model="form.introduction" type="textarea" :rows="3" placeholder="请输入简介" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
+        <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="详细介绍">
               <editor v-model="form.detailContent" :min-height="192" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
+        <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="备注" prop="remark">
-              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+              <el-input v-model="form.remark" type="textarea" placeholder="请输入备注" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -259,11 +175,13 @@
 
 <script setup name="Showcase">
 import { listShowcase, getShowcase, delShowcase, addShowcase, updateShowcase } from "@/api/edu/showcase"
+import { listSchool } from "@/api/edu/school"
 
 const { proxy } = getCurrentInstance()
 const { edu_showcase_type, sys_yes_no, sys_normal_disable } = proxy.useDict('edu_showcase_type', 'sys_yes_no', 'sys_normal_disable')
 
 const showcaseList = ref([])
+const schoolList = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
@@ -272,23 +190,17 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
-const daterangeDisplayTime = ref([])
-const daterangeCreateTime = ref([])
 
 const data = reactive({
   form: {},
   queryParams: {
     pageNum: 1,
     pageSize: 10,
+    schoolId: null,
     showcaseName: null,
     showcaseType: null,
-    displayTime: null,
-    awardTime: null,
     awardLevel: null,
-    schoolId: null,
     isRecommended: null,
-    status: null,
-    createTime: null,
   },
   rules: {
     showcaseName: [
@@ -297,26 +209,30 @@ const data = reactive({
     showcaseType: [
       { required: true, message: "风采类型不能为空", trigger: "change" }
     ],
-    status: [
-      { required: true, message: "状态不能为空", trigger: "change" }
+    schoolId: [
+      { required: true, message: "所属学校不能为空", trigger: "change" }
+    ],
+    displayTime: [
+      { required: true, message: "展示时间不能为空", trigger: "blur" }
+    ],
+    isRecommended: [
+      { required: true, message: "是否推荐不能为空", trigger: "change" }
     ],
   }
 })
 
 const { queryParams, form, rules } = toRefs(data)
 
+/** 查询学校列表 */
+function getSchoolList() {
+  listSchool({ pageNum: 1, pageSize: 1000, status: '0' }).then(response => {
+    schoolList.value = response.rows
+  })
+}
+
 /** 查询风采展示信息列表 */
 function getList() {
   loading.value = true
-  queryParams.value.params = {}
-  if (null != daterangeDisplayTime && '' != daterangeDisplayTime) {
-    queryParams.value.params["beginDisplayTime"] = daterangeDisplayTime.value[0]
-    queryParams.value.params["endDisplayTime"] = daterangeDisplayTime.value[1]
-  }
-  if (null != daterangeCreateTime && '' != daterangeCreateTime) {
-    queryParams.value.params["beginCreateTime"] = daterangeCreateTime.value[0]
-    queryParams.value.params["endCreateTime"] = daterangeCreateTime.value[1]
-  }
   listShowcase(queryParams.value).then(response => {
     showcaseList.value = response.rows
     total.value = response.total
@@ -336,27 +252,13 @@ function reset() {
     showcaseId: null,
     showcaseName: null,
     showcaseType: null,
+    schoolId: null,
     displayTime: null,
-    viewCount: null,
-    likeCount: null,
-    displayInfo: null,
     introduction: null,
     detailContent: null,
-    awardTime: null,
-    awardLevel: null,
-    awardOrganization: null,
     coverImageUrl: null,
     imageUrls: null,
-    videoUrl: null,
-    schoolId: null,
     isRecommended: null,
-    sortOrder: null,
-    status: null,
-    delFlag: null,
-    createBy: null,
-    createTime: null,
-    updateBy: null,
-    updateTime: null,
     remark: null
   }
   proxy.resetForm("showcaseRef")
@@ -370,8 +272,6 @@ function handleQuery() {
 
 /** 重置按钮操作 */
 function resetQuery() {
-  daterangeDisplayTime.value = []
-  daterangeCreateTime.value = []
   proxy.resetForm("queryRef")
   handleQuery()
 }
@@ -440,5 +340,6 @@ function handleExport() {
   }, `showcase_${new Date().getTime()}.xlsx`)
 }
 
+getSchoolList()
 getList()
 </script>

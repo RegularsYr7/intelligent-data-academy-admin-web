@@ -1,296 +1,128 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="100px">
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="所属班级ID" prop="classId">
-            <el-input v-model="queryParams.classId" placeholder="请输入所属班级ID" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="课程代码" prop="courseCode">
-            <el-input v-model="queryParams.courseCode" placeholder="请输入课程代码" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="课程名称" prop="courseName">
-            <el-input v-model="queryParams.courseName" placeholder="请输入课程名称" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="课程类型" prop="courseType">
-            <el-select v-model="queryParams.courseType" placeholder="请选择课程类型" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_course_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20" style="margin-top: 18px;">
-        <el-col :span="6">
-          <el-form-item label="授课教师姓名" prop="teacherName">
-            <el-input v-model="queryParams.teacherName" placeholder="请输入授课教师姓名" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="上课地点" prop="classroom">
-            <el-input v-model="queryParams.classroom" placeholder="请输入上课地点" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="星期几" prop="weekDay">
-            <el-input v-model="queryParams.weekDay" placeholder="请输入星期几" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="时间段" prop="timeSlot">
-            <el-input v-model="queryParams.timeSlot" placeholder="请输入时间段" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20" style="margin-top: 18px;">
-        <el-col :span="6">
-          <el-form-item label="周次类型" prop="weekType">
-            <el-select v-model="queryParams.weekType" placeholder="请选择周次类型" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_week_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="学期" prop="semester">
-            <el-input v-model="queryParams.semester" placeholder="请输入学期" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="学年" prop="academicYear">
-            <el-input v-model="queryParams.academicYear" placeholder="请输入学年" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-      </el-row>
+    <!-- 搜索栏 -->
+    <el-form :inline="true" :model="queryParams" class="demo-form-inline">
+      <el-form-item label="班级">
+        <el-select v-model="queryParams.classId" placeholder="请选择班级" filterable>
+          <el-option v-for="item in classList" :key="item.classId" :label="item.className" :value="item.classId" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="学期">
+        <el-select v-model="queryParams.semester" placeholder="请选择学期" filterable>
+          <el-option v-for="item in semesterList" :key="item.semesterId" :label="item.semesterName"
+            :value="item.semesterName" />
+        </el-select>
+      </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+        <el-button type="primary" @click="handleQuery">查询</el-button>
+        <el-button type="success" plain icon="Upload" @click="handleImport">导入</el-button>
       </el-form-item>
     </el-form>
 
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button type="primary" plain icon="Plus" @click="handleAdd" v-hasPermi="['edu:schedule:add']">新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="success" plain icon="Edit" :disabled="single" @click="handleUpdate"
-          v-hasPermi="['edu:schedule:edit']">修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete"
-          v-hasPermi="['edu:schedule:remove']">删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="warning" plain icon="Download" @click="handleExport"
-          v-hasPermi="['edu:schedule:export']">导出</el-button>
-      </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
-    </el-row>
+    <!-- 课表展示 -->
+    <div v-if="hasData" class="schedule-container">
+      <div class="week-selector">
+        <el-button @click="changeWeek(-1)" :disabled="currentWeek <= 1">上一周</el-button>
+        <span class="current-week">第 {{ currentWeek }} 周</span>
+        <el-button @click="changeWeek(1)" :disabled="currentWeek >= maxWeek">下一周</el-button>
+      </div>
 
-    <el-table v-loading="loading" :data="scheduleList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" fixed />
-      <el-table-column label="课程名称" align="center" prop="courseName" show-overflow-tooltip />
-      <el-table-column label="课程类型" align="center" prop="courseType" width="100">
-        <template #default="scope">
-          <dict-tag :options="edu_course_type" :value="scope.row.courseType" />
-        </template>
-      </el-table-column>
-      <el-table-column label="授课教师" align="center" prop="teacherName" width="100" show-overflow-tooltip />
-      <el-table-column label="上课时间" align="center" prop="weekDay" width="250" show-overflow-tooltip>
-        <template #default="scope">
-          <span style="display: inline-flex; align-items: center; gap: 4px;">
-            <dict-tag :options="edu_week_day" :value="scope.row.weekDay" />
-            <dict-tag :options="edu_time_slot" :value="scope.row.timeSlot" />
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="上课地点" align="center" prop="classroom" show-overflow-tooltip />
-      <el-table-column label="学期" align="center" prop="semester" show-overflow-tooltip />
-      <el-table-column label="创建时间" align="center" prop="createTime" width="110">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" width="150" fixed="right">
-        <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
-            v-hasPermi="['edu:schedule:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)"
-            v-hasPermi="['edu:schedule:remove']">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <div class="schedule-table">
+        <!-- 表头 -->
+        <div class="schedule-header">
+          <div class="header-cell time-col">时间</div>
+          <div class="header-cell" v-for="day in weekDays" :key="day">{{ day }}</div>
+        </div>
+        <!-- 表体 -->
+        <div class="schedule-body">
+          <div v-for="(slotName, slotIndex) in timeSlots" :key="slotIndex" class="schedule-row">
+            <div class="time-cell">{{ slotName }}</div>
+            <div v-for="(day, dayIndex) in 7" :key="dayIndex" class="course-cell"
+              @click="handleCellClick(dayIndex, slotIndex)">
+              <div v-if="getCourse(currentWeek, dayIndex, slotIndex)" class="course-info">
+                <div class="course-name">{{ getCourse(currentWeek, dayIndex, slotIndex).courseName }}</div>
+                <div class="course-room">@{{ getCourse(currentWeek, dayIndex, slotIndex).classroom }}</div>
+                <div class="course-teacher">{{ getCourse(currentWeek, dayIndex, slotIndex).teacherName }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-else-if="searched" class="no-data">
+      <el-empty description="暂无课程数据" />
+    </div>
+    <div v-else class="no-data">
+      <el-empty description="请选择班级和学期后点击查询" />
+    </div>
 
-    <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum"
-      v-model:limit="queryParams.pageSize" @pagination="getList" />
-
-    <!-- 添加或修改课信息对话框 -->
-    <el-dialog :title="title" v-model="open" width="1000px" append-to-body>
-      <el-form ref="scheduleRef" :model="form" :rules="rules" label-width="140px">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="所属学校">
-              <el-select v-model="tempSchoolId" placeholder="请选择所属学校" clearable filterable @change="handleSchoolChange"
-                style="width: 100%;">
-                <el-option v-for="school in schoolList" :key="school.schoolId" :label="school.schoolName"
-                  :value="school.schoolId"></el-option>
-              </el-select>
+    <!-- 添加或修改课程对话框 -->
+    <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+      <el-form ref="courseFormRef" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="课程名称" prop="courseName">
+          <el-input v-model="form.courseName" placeholder="请输入课程名称" />
+        </el-form-item>
+        <el-form-item label="教师姓名" prop="teacherName">
+          <el-input v-model="form.teacherName" placeholder="请输入教师姓名" />
+        </el-form-item>
+        <el-form-item label="上课地点" prop="classroom">
+          <el-input v-model="form.classroom" placeholder="请输入上课地点" />
+        </el-form-item>
+        <el-form-item label="周次范围" required>
+          <el-col :span="11">
+            <el-form-item prop="startWeek">
+              <el-input-number v-model="form.startWeek" :min="1" :max="maxWeek" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="所属学院">
-              <el-select v-model="tempCollegeId" placeholder="请选择所属学院" clearable filterable
-                @change="handleCollegeChange" style="width: 100%;">
-                <el-option v-for="college in collegeList" :key="college.collegeId" :label="college.collegeName"
-                  :value="college.collegeId"></el-option>
-              </el-select>
+          <el-col :span="2" class="text-center" style="text-align: center;">-</el-col>
+          <el-col :span="11">
+            <el-form-item prop="endWeek">
+              <el-input-number v-model="form.endWeek" :min="1" :max="maxWeek" style="width: 100%" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="所属专业">
-              <el-select v-model="tempMajorId" placeholder="请选择所属专业" clearable filterable @change="handleMajorChange"
-                style="width: 100%;">
-                <el-option v-for="major in majorList" :key="major.majorId" :label="major.majorName"
-                  :value="major.majorId"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="所属班级" prop="classId">
-              <el-select v-model="form.classId" placeholder="请选择所属班级" clearable filterable style="width: 100%;">
-                <el-option v-for="cls in classList" :key="cls.classId" :label="cls.className"
-                  :value="cls.classId"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="课程代码" prop="courseCode">
-              <el-input v-model="form.courseCode" placeholder="请输入课程代码" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="课程名称" prop="courseName">
-              <el-input v-model="form.courseName" placeholder="请输入课程名称" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="课程英文名称" prop="courseNameEn">
-              <el-input v-model="form.courseNameEn" placeholder="请输入课程英文名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="课程类型" prop="courseType">
-              <el-select v-model="form.courseType" placeholder="请选择课程类型" style="width: 100%;">
-                <el-option v-for="dict in edu_course_type" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="授课教师ID" prop="teacherId">
-              <el-input v-model="form.teacherId" placeholder="请输入授课教师ID" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="授课教师姓名" prop="teacherName">
-              <el-input v-model="form.teacherName" placeholder="请输入授课教师姓名" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="上课地点" prop="classroom">
-              <el-input v-model="form.classroom" placeholder="请输入上课地点" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="星期几" prop="weekDay">
-              <el-input v-model="form.weekDay" placeholder="请输入星期几" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="时间段" prop="timeSlot">
-              <el-input v-model="form.timeSlot" placeholder="请输入时间段" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="开始周次" prop="startWeek">
-              <el-input v-model="form.startWeek" placeholder="请输入开始周次" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="结束周次" prop="endWeek">
-              <el-input v-model="form.endWeek" placeholder="请输入结束周次" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="周次类型" prop="weekType">
-              <el-select v-model="form.weekType" placeholder="请选择周次类型" style="width: 100%;">
-                <el-option v-for="dict in edu_week_type" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="学期" prop="semester">
-              <el-input v-model="form.semester" placeholder="请输入学期" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="学年" prop="academicYear">
-              <el-input v-model="form.academicYear" placeholder="请输入学年" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="学分" prop="credits">
-              <el-input v-model="form.credits" placeholder="请输入学分" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="学时" prop="hours">
-              <el-input v-model="form.hours" placeholder="请输入学时" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="显示顺序" prop="sortOrder">
-              <el-input v-model="form.sortOrder" placeholder="请输入显示顺序" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="备注" prop="remark">
-              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        </el-form-item>
+        <el-form-item label="周次类型" prop="weekType">
+          <el-radio-group v-model="form.weekType">
+            <el-radio label="0">全部</el-radio>
+            <el-radio label="1">单周</el-radio>
+            <el-radio label="2">双周</el-radio>
+          </el-radio-group>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
           <el-button @click="cancel">取 消</el-button>
+          <el-button v-if="form.scheduleId" type="danger" @click="handleDelete">删 除</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 课程表导入对话框 -->
+    <el-dialog :title="upload.title" v-model="upload.open" width="400px" append-to-body>
+      <el-upload ref="uploadRef" :limit="1" accept=".xlsx, .xls" :headers="upload.headers"
+        :action="upload.url + '?updateSupport=' + upload.updateSupport" :disabled="upload.isUploading"
+        :on-progress="handleFileUploadProgress" :on-success="handleFileSuccess" :on-change="handleFileChange"
+        :on-remove="handleFileRemove" :auto-upload="false" drag>
+        <el-icon class="el-icon--upload">
+          <upload-filled />
+        </el-icon>
+        <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+        <template #tip>
+          <div class="el-upload__tip text-center">
+            <div class="el-upload__tip">
+              <el-checkbox v-model="upload.updateSupport" />是否更新已经存在的课程数据
+            </div>
+            <span>仅允许导入xls、xlsx格式文件。</span>
+            <el-link type="primary" :underline="false" style="font-size: 12px; vertical-align: baseline"
+              @click="importTemplate">下载模板</el-link>
+          </div>
+        </template>
+      </el-upload>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="submitFileForm">确 定</el-button>
+          <el-button @click="upload.open = false">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -298,332 +130,367 @@
 </template>
 
 <script setup name="Schedule">
-import { listSchedule, getSchedule, delSchedule, addSchedule, updateSchedule } from "@/api/edu/schedule"
-import { listSchool } from "@/api/edu/school"
-import { listCollege } from "@/api/edu/college"
-import { listMajor } from "@/api/edu/major"
-import { listClass } from "@/api/edu/class"
+import { getScheduleForAdmin, addSchedule, updateSchedule, delSchedule } from "@/api/edu/schedule";
+import { listClass } from "@/api/edu/class";
+import { listSemester } from "@/api/edu/semester";
+import { getToken } from "@/utils/auth";
 
-const { proxy } = getCurrentInstance()
-const { edu_course_type, edu_week_type, edu_week_day, edu_time_slot } = proxy.useDict('edu_course_type', 'edu_week_type', 'edu_week_day', 'edu_time_slot')
+const { proxy } = getCurrentInstance();
 
-const scheduleList = ref([])
-const schoolList = ref([])
-const collegeList = ref([])
-const majorList = ref([])
-const classList = ref([])
-const allCollegeList = ref([])
-const allMajorList = ref([])
-const allClassList = ref([])
-const open = ref(false)
-const loading = ref(true)
-const showSearch = ref(true)
-const ids = ref([])
-const single = ref(true)
-const multiple = ref(true)
-const total = ref(0)
-const title = ref("")
+const queryParams = ref({
+  classId: null,
+  semester: null
+});
 
-// 用于级联选择的临时变量（不提交到后端）
-const tempSchoolId = ref(null)
-const tempCollegeId = ref(null)
-const tempMajorId = ref(null)
+const classList = ref([]);
+const semesterList = ref([]);
+const scheduleData = ref({});
+const currentWeek = ref(1);
+const maxWeek = ref(20);
+const hasData = ref(false);
+const searched = ref(false);
 
-const data = reactive({
-  form: {},
-  queryParams: {
-    pageNum: 1,
-    pageSize: 10,
-    classId: null,
-    courseCode: null,
-    courseName: null,
-    courseType: null,
-    teacherName: null,
-    classroom: null,
-    weekDay: null,
-    timeSlot: null,
-    weekType: null,
-    semester: null,
-    academicYear: null,
-    status: null,
-    createTime: null,
-  },
-  rules: {
-    classId: [
-      { required: true, message: "所属班级ID不能为空", trigger: "blur" }
-    ],
-    courseName: [
-      { required: true, message: "课程名称不能为空", trigger: "blur" }
-    ],
-    courseType: [
-      { required: true, message: "课程类型不能为空", trigger: "change" }
-    ],
-    teacherName: [
-      { required: true, message: "授课教师姓名不能为空", trigger: "blur" }
-    ],
-    classroom: [
-      { required: true, message: "上课地点不能为空", trigger: "blur" }
-    ],
-    weekDay: [
-      { required: true, message: "星期几不能为空", trigger: "blur" }
-    ],
-    timeSlot: [
-      { required: true, message: "时间段不能为空", trigger: "blur" }
-    ],
-    startWeek: [
-      { required: true, message: "开始周次不能为空", trigger: "blur" }
-    ],
-    endWeek: [
-      { required: true, message: "结束周次不能为空", trigger: "blur" }
-    ],
-    weekType: [
-      { required: true, message: "周次类型不能为空", trigger: "change" }
-    ],
-    semester: [
-      { required: true, message: "学期不能为空", trigger: "blur" }
-    ],
-    academicYear: [
-      { required: true, message: "学年不能为空", trigger: "blur" }
-    ],
+const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+const timeSlots = ['第一大节', '第二大节', '第三大节', '第四大节', '第五大节'];
+
+const open = ref(false);
+const title = ref("");
+const form = ref({});
+const rules = {
+  courseName: [{ required: true, message: "课程名称不能为空", trigger: "blur" }],
+  teacherName: [{ required: true, message: "教师姓名不能为空", trigger: "blur" }],
+  classroom: [{ required: true, message: "上课地点不能为空", trigger: "blur" }],
+  startWeek: [{ required: true, message: "开始周次不能为空", trigger: "blur" }],
+  endWeek: [{ required: true, message: "结束周次不能为空", trigger: "blur" }],
+  weekType: [{ required: true, message: "周次类型不能为空", trigger: "change" }]
+};
+
+// 课程表导入参数
+const upload = reactive({
+  // 是否显示弹出层（课程表导入）
+  open: false,
+  // 弹出层标题（课程表导入）
+  title: "",
+  // 是否禁用上传
+  isUploading: false,
+  // 是否更新已经存在的课程数据
+  updateSupport: 0,
+  // 设置上传的请求头部
+  headers: { Authorization: "Bearer " + getToken() },
+  // 上传的地址
+  url: import.meta.env.VITE_APP_BASE_API + "/edu/schedule/importData",
+  // 选中的文件
+  selectedFile: null
+});
+
+function handleCellClick(dayIndex, slotIndex) {
+  if (!queryParams.value.classId || !queryParams.value.semester) {
+    proxy.$modal.msgError("请先选择班级和学期");
+    return;
   }
-})
 
-const { queryParams, form, rules } = toRefs(data)
-
-/** 查询课信息列表 */
-function getList() {
-  loading.value = true
-  listSchedule(queryParams.value).then(response => {
-    scheduleList.value = response.rows
-    total.value = response.total
-    loading.value = false
-  })
+  const course = getCourse(currentWeek.value, dayIndex, slotIndex);
+  if (course) {
+    handleUpdate(course);
+  } else {
+    handleAdd(dayIndex, slotIndex);
+  }
 }
 
-// 取消按钮
+function handleAdd(dayIndex, slotIndex) {
+  reset();
+  form.value = {
+    classId: queryParams.value.classId,
+    semester: queryParams.value.semester,
+    weekDay: dayIndex + 1, // Assuming 1-based weekDay
+    timeSlot: slotIndex,
+    startWeek: 1,
+    endWeek: maxWeek.value,
+    weekType: "0"
+  };
+  title.value = "添加课程";
+  open.value = true;
+}
+
+function handleUpdate(course) {
+  reset();
+  form.value = { ...course };
+  title.value = "修改课程";
+  open.value = true;
+}
+
+function submitForm() {
+  proxy.$refs["courseFormRef"].validate(valid => {
+    if (valid) {
+      if (form.value.scheduleId != null) {
+        updateSchedule(form.value).then(response => {
+          proxy.$modal.msgSuccess("修改成功");
+          open.value = false;
+          handleQuery();
+        });
+      } else {
+        addSchedule(form.value).then(response => {
+          proxy.$modal.msgSuccess("新增成功");
+          open.value = false;
+          handleQuery();
+        });
+      }
+    }
+  });
+}
+
+function handleDelete() {
+  if (!form.value.scheduleId) return;
+  proxy.$modal.confirm('是否确认删除该课程？').then(function () {
+    return delSchedule(form.value.scheduleId);
+  }).then(() => {
+    proxy.$modal.msgSuccess("删除成功");
+    open.value = false;
+    handleQuery();
+  }).catch(() => { });
+}
+
+/** 导入按钮操作 */
+function handleImport() {
+  upload.title = "课程表导入";
+  upload.open = true;
+  upload.selectedFile = null;
+}
+
+/** 下载模板操作 */
+function importTemplate() {
+  proxy.download("edu/schedule/importTemplate", {}, `schedule_template_${new Date().getTime()}.xlsx`);
+}
+
+/** 文件上传中处理 */
+const handleFileUploadProgress = (event, file, fileList) => {
+  upload.isUploading = true;
+}
+
+/** 文件选择处理 */
+const handleFileChange = (file, fileList) => {
+  upload.selectedFile = file;
+}
+
+/** 文件删除处理 */
+const handleFileRemove = (file, fileList) => {
+  upload.selectedFile = null;
+}
+
+/** 文件上传成功处理 */
+const handleFileSuccess = (response, file, fileList) => {
+  upload.open = false;
+  upload.isUploading = false;
+  proxy.$refs["uploadRef"].handleRemove(file);
+  proxy.$alert("<div style='overflow: auto;overflow-x: hidden;max-height: 70vh;padding: 10px 20px 0;'>" + response.msg + "</div>", "导入结果", { dangerouslyUseHTMLString: true });
+  handleQuery();
+}
+
+/** 提交上传文件 */
+function submitFileForm() {
+  const file = upload.selectedFile;
+  if (!file || file.length === 0 || !file.name.toLowerCase().endsWith('.xls') && !file.name.toLowerCase().endsWith('.xlsx')) {
+    proxy.$modal.msgError('请选择后缀为 "xls" 或 "xlsx" 的文件。');
+    return;
+  }
+  proxy.$refs["uploadRef"].submit();
+}
+
 function cancel() {
-  open.value = false
-  reset()
+  open.value = false;
+  reset();
 }
 
-// 表单重置
 function reset() {
   form.value = {
     scheduleId: null,
     classId: null,
-    courseCode: null,
+    semester: null,
     courseName: null,
-    courseNameEn: null,
-    courseType: null,
-    teacherId: null,
     teacherName: null,
     classroom: null,
     weekDay: null,
     timeSlot: null,
     startWeek: null,
     endWeek: null,
-    weekType: null,
-    semester: null,
-    academicYear: null,
-    credits: null,
-    hours: null,
-    sortOrder: null,
-    status: null,
-    delFlag: null,
-    createBy: null,
-    createTime: null,
-    updateBy: null,
-    updateTime: null,
-    remark: null
-  }
-  proxy.resetForm("scheduleRef")
+    weekType: "0"
+  };
+  proxy.resetForm("courseFormRef");
 }
 
-/** 搜索按钮操作 */
+function getList() {
+  listClass({ pageNum: 1, pageSize: 1000 }).then(res => {
+    classList.value = res.rows;
+  });
+  listSemester({ pageNum: 1, pageSize: 1000 }).then(res => {
+    semesterList.value = res.rows;
+  });
+}
+
 function handleQuery() {
-  queryParams.value.pageNum = 1
-  getList()
+  if (!queryParams.value.classId || !queryParams.value.semester) {
+    proxy.$modal.msgError("请选择班级和学期");
+    return;
+  }
+  searched.value = true;
+
+  const selectedSemester = semesterList.value.find(item => item.semesterName === queryParams.value.semester);
+
+  getScheduleForAdmin(queryParams.value.classId, queryParams.value.semester).then(res => {
+    scheduleData.value = res.data || {};
+    const weeks = Object.keys(scheduleData.value).map(Number);
+    if (weeks.length > 0) {
+      hasData.value = true;
+
+      if (selectedSemester && selectedSemester.totalWeeks) {
+        maxWeek.value = selectedSemester.totalWeeks;
+      } else {
+        maxWeek.value = Math.max(...weeks, 20);
+      }
+
+      if (selectedSemester && selectedSemester.currentWeek) {
+        currentWeek.value = selectedSemester.currentWeek;
+      } else {
+        currentWeek.value = 1;
+      }
+
+      if (currentWeek.value > maxWeek.value) currentWeek.value = maxWeek.value;
+      if (currentWeek.value < 1) currentWeek.value = 1;
+    } else {
+      hasData.value = false;
+    }
+  });
 }
 
-/** 重置按钮操作 */
-function resetQuery() {
-  proxy.resetForm("queryRef")
-  handleQuery()
-}
-
-// 多选框选中数据
-function handleSelectionChange(selection) {
-  ids.value = selection.map(item => item.scheduleId)
-  single.value = selection.length != 1
-  multiple.value = !selection.length
-}
-
-/** 获取学校列表 */
-function getSchoolList() {
-  listSchool().then(response => {
-    schoolList.value = response.rows
-  })
-}
-
-/** 获取学院列表 */
-function getCollegeList() {
-  listCollege().then(response => {
-    allCollegeList.value = response.rows
-    collegeList.value = response.rows
-  })
-}
-
-/** 获取专业列表 */
-function getMajorList() {
-  listMajor().then(response => {
-    allMajorList.value = response.rows
-    majorList.value = response.rows
-  })
-}
-
-/** 获取班级列表 */
-function getClassList() {
-  listClass().then(response => {
-    allClassList.value = response.rows
-    classList.value = response.rows
-  })
-}
-
-/** 学校改变时筛选学院 */
-function handleSchoolChange(schoolId) {
-  tempCollegeId.value = null
-  tempMajorId.value = null
-  form.value.classId = null
-  if (schoolId) {
-    collegeList.value = allCollegeList.value.filter(college => college.schoolId === schoolId)
-    majorList.value = []
-    classList.value = []
-  } else {
-    collegeList.value = allCollegeList.value
-    majorList.value = allMajorList.value
-    classList.value = allClassList.value
+function changeWeek(delta) {
+  const newWeek = currentWeek.value + delta;
+  if (newWeek >= 1 && newWeek <= maxWeek.value) {
+    currentWeek.value = newWeek;
   }
 }
 
-/** 学院改变时筛选专业 */
-function handleCollegeChange(collegeId) {
-  tempMajorId.value = null
-  form.value.classId = null
-  if (collegeId) {
-    majorList.value = allMajorList.value.filter(major => major.collegeId === collegeId)
-    classList.value = []
-  } else if (tempSchoolId.value) {
-    const schoolCollegeIds = collegeList.value.map(c => c.collegeId)
-    majorList.value = allMajorList.value.filter(major => schoolCollegeIds.includes(major.collegeId))
-    classList.value = allClassList.value
-  } else {
-    majorList.value = allMajorList.value
-    classList.value = allClassList.value
+function getCourse(week, dayIndex, slotIndex) {
+  const weekData = scheduleData.value[String(week)];
+  if (!weekData) return null;
+
+  const dayData = weekData[String(dayIndex)];
+  if (!dayData) return null;
+
+  const slotData = dayData[String(slotIndex)];
+  return slotData;
+}
+
+getList();
+</script>
+
+<style scoped lang="scss">
+.schedule-container {
+  margin-top: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 20px;
+  background: #fff;
+}
+
+.week-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+
+  .current-week {
+    margin: 0 20px;
+    font-size: 18px;
+    font-weight: bold;
   }
 }
 
-/** 专业改变时筛选班级 */
-function handleMajorChange(majorId) {
-  form.value.classId = null
-  if (majorId) {
-    classList.value = allClassList.value.filter(cls => cls.majorId === majorId)
-  } else if (tempCollegeId.value) {
-    const collegeMajorIds = majorList.value.map(m => m.majorId)
-    classList.value = allClassList.value.filter(cls => collegeMajorIds.includes(cls.majorId))
-  } else {
-    classList.value = allClassList.value
+.schedule-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dcdfe6;
+}
+
+.schedule-header {
+  display: flex;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #dcdfe6;
+
+  .header-cell {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0;
+    font-weight: bold;
+    border-right: 1px solid #dcdfe6;
+
+    &:last-child {
+      border-right: none;
+    }
+
+    &.time-col {
+      flex: 0 0 100px;
+    }
   }
 }
 
-/** 新增按钮操作 */
-function handleAdd() {
-  reset()
-  // 重置级联选择的临时变量
-  tempSchoolId.value = null
-  tempCollegeId.value = null
-  tempMajorId.value = null
-  // 加载数据
-  getSchoolList()
-  getCollegeList()
-  getMajorList()
-  getClassList()
-  open.value = true
-  title.value = "添加课信息"
-}
+.schedule-body {
+  .schedule-row {
+    display: flex;
+    border-bottom: 1px solid #dcdfe6;
 
-/** 修改按钮操作 */
-function handleUpdate(row) {
-  reset()
-  getSchoolList()
-  getCollegeList()
-  getMajorList()
-  getClassList()
-  const _scheduleId = row.scheduleId || ids.value
-  getSchedule(_scheduleId).then(response => {
-    form.value = response.data
-    // 根据已选班级反向查找并设置级联选择
-    if (form.value.classId) {
-      const selectedClass = allClassList.value.find(cls => cls.classId === form.value.classId)
-      if (selectedClass && selectedClass.majorId) {
-        tempMajorId.value = selectedClass.majorId
-        classList.value = allClassList.value.filter(cls => cls.majorId === selectedClass.majorId)
+    &:last-child {
+      border-bottom: none;
+    }
 
-        const selectedMajor = allMajorList.value.find(m => m.majorId === selectedClass.majorId)
-        if (selectedMajor && selectedMajor.collegeId) {
-          tempCollegeId.value = selectedMajor.collegeId
-          majorList.value = allMajorList.value.filter(major => major.collegeId === selectedMajor.collegeId)
+    .time-cell {
+      flex: 0 0 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f5f7fa;
+      border-right: 1px solid #dcdfe6;
+      font-weight: bold;
+    }
 
-          const selectedCollege = allCollegeList.value.find(c => c.collegeId === selectedMajor.collegeId)
-          if (selectedCollege && selectedCollege.schoolId) {
-            tempSchoolId.value = selectedCollege.schoolId
-            collegeList.value = allCollegeList.value.filter(college => college.schoolId === selectedCollege.schoolId)
-          }
+    .course-cell {
+      flex: 1;
+      min-height: 100px;
+      border-right: 1px solid #dcdfe6;
+      padding: 5px;
+
+      &:last-child {
+        border-right: none;
+      }
+
+      .course-info {
+        background-color: #ecf5ff;
+        border: 1px solid #d9ecff;
+        border-radius: 4px;
+        padding: 8px;
+        height: 100%;
+        font-size: 12px;
+        color: #409eff;
+
+        .course-name {
+          font-weight: bold;
+          margin-bottom: 4px;
+        }
+
+        .course-room {
+          margin-bottom: 2px;
         }
       }
     }
-    open.value = true
-    title.value = "修改课信息"
-  })
+  }
 }
 
-/** 提交按钮 */
-function submitForm() {
-  proxy.$refs["scheduleRef"].validate(valid => {
-    if (valid) {
-      if (form.value.scheduleId != null) {
-        updateSchedule(form.value).then(response => {
-          proxy.$modal.msgSuccess("修改成功")
-          open.value = false
-          getList()
-        })
-      } else {
-        addSchedule(form.value).then(response => {
-          proxy.$modal.msgSuccess("新增成功")
-          open.value = false
-          getList()
-        })
-      }
-    }
-  })
+.no-data {
+  margin-top: 50px;
+  text-align: center;
 }
 
-/** 删除按钮操作 */
-function handleDelete(row) {
-  const _scheduleIds = row.scheduleId || ids.value
-  proxy.$modal.confirm('是否确认删除课信息编号为"' + _scheduleIds + '"的数据项？').then(function () {
-    return delSchedule(_scheduleIds)
-  }).then(() => {
-    getList()
-    proxy.$modal.msgSuccess("删除成功")
-  }).catch(() => { })
+.course-cell:hover {
+  background-color: #f5f7fa;
+  cursor: pointer;
 }
-
-/** 导出按钮操作 */
-function handleExport() {
-  proxy.download('edu/schedule/export', {
-    ...queryParams.value
-  }, `schedule_${new Date().getTime()}.xlsx`)
-}
-
-getList()
-</script>
+</style>

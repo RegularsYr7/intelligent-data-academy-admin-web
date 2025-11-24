@@ -119,12 +119,20 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="经度" prop="longitude">
-              <el-input v-model="form.longitude" placeholder="点击地图选择位置自动填充" readonly />
+              <el-input v-model="form.longitude" placeholder="点击地图选择位置自动填充" readonly @click="showMapDialog = true">
+                <template #append>
+                  <el-button icon="Location" @click="showMapDialog = true" />
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="纬度" prop="latitude">
-              <el-input v-model="form.latitude" placeholder="点击地图选择位置自动填充" readonly />
+              <el-input v-model="form.latitude" placeholder="点击地图选择位置自动填充" readonly @click="showMapDialog = true">
+                <template #append>
+                  <el-button icon="Location" @click="showMapDialog = true" />
+                </template>
+              </el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -145,7 +153,7 @@
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
                 <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
-                  }}</el-radio>
+                }}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -187,6 +195,7 @@
 <script setup name="School">
 import { listSchool, getSchool, delSchool, addSchool, updateSchool } from "@/api/edu/school"
 import ImageUpload from '@/components/ImageUpload'
+import { loadAMap } from "@/utils/amap"
 
 const { proxy } = getCurrentInstance()
 const { sys_normal_disable } = proxy.useDict('sys_normal_disable')
@@ -214,6 +223,15 @@ const selectedLocation = ref({
   city: "",
   district: ""
 })
+
+const DEFAULT_LOCATION = {
+  longitude: 104.464508,
+  latitude: 30.845427,
+  address: "成都文理学院",
+  province: "",
+  city: "",
+  district: ""
+}
 
 const data = reactive({
   form: {},
@@ -269,59 +287,80 @@ function reset() {
   proxy.resetForm("schoolRef")
 }
 
+function getInitialLocation() {
+  const lng = parseFloat(form.value.longitude)
+  const lat = parseFloat(form.value.latitude)
+  if (!isNaN(lng) && !isNaN(lat)) {
+    return {
+      longitude: lng,
+      latitude: lat,
+      address: form.value.address || form.value.schoolName || selectedLocation.value.address || "",
+      province: form.value.province || "",
+      city: form.value.city || "",
+      district: form.value.district || ""
+    }
+  }
+  return DEFAULT_LOCATION
+}
+
+function formatSelectedLocation(location, fallbackAddress = "") {
+  const lng = Number(location.longitude)
+  const lat = Number(location.latitude)
+  return {
+    address: location.address || fallbackAddress,
+    longitude: !isNaN(lng) ? lng.toFixed(6) : "",
+    latitude: !isNaN(lat) ? lat.toFixed(6) : "",
+    province: location.province || "",
+    city: location.city || "",
+    district: location.district || ""
+  }
+}
+
 // 初始化高德地图
 function initAMap() {
-  // 动态加载高德地图API
-  if (!window.AMap) {
-    const script = document.createElement('script')
-    script.src = 'https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_KEY&plugin=AMap.PlaceSearch,AMap.Geocoder'
-    script.onload = () => {
-      createMap()
-    }
-    document.head.appendChild(script)
-  } else {
+  loadAMap().then(() => {
     createMap()
-  }
+  }).catch(e => {
+    console.error(e)
+    proxy.$modal.msgError("地图加载失败，请检查Key配置")
+  })
 }
 
 // 创建地图实例
 function createMap() {
   nextTick(() => {
-    if (!mapInstance.value) {
-      mapInstance.value = new AMap.Map('amap-container', {
-        zoom: 13,
-        center: [form.value.longitude || 116.397428, form.value.latitude || 39.90923],
-        viewMode: '3D'
+    const initialLocation = getInitialLocation()
+    const center = [initialLocation.longitude, initialLocation.latitude]
+
+    mapInstance.value = new AMap.Map('amap-container', {
+      zoom: 16,
+      center: center,
+      viewMode: '2D'
+    })
+
+    // 添加点击事件
+    mapInstance.value.on('click', (e) => {
+      const { lng, lat } = e.lnglat
+      updateMarker(lng, lat)
+
+      // 逆地理编码获取地址信息
+      const geocoder = new AMap.Geocoder()
+      geocoder.getAddress([lng, lat], (status, result) => {
+        if (status === 'complete' && result.info === 'OK') {
+          const addressComponent = result.regeocode.addressComponent
+          selectedLocation.value = formatSelectedLocation({
+            address: result.regeocode.formattedAddress,
+            longitude: lng,
+            latitude: lat,
+            province: addressComponent.province,
+            city: addressComponent.city,
+            district: addressComponent.district
+          })
+        }
       })
-
-      // 添加点击事件
-      mapInstance.value.on('click', (e) => {
-        const { lng, lat } = e.lnglat
-        updateMarker(lng, lat)
-
-        // 逆地理编码获取地址信息
-        const geocoder = new AMap.Geocoder()
-        geocoder.getAddress([lng, lat], (status, result) => {
-          if (status === 'complete' && result.info === 'OK') {
-            const addressComponent = result.regeocode.addressComponent
-            selectedLocation.value = {
-              address: result.regeocode.formattedAddress,
-              longitude: lng.toFixed(6),
-              latitude: lat.toFixed(6),
-              province: addressComponent.province,
-              city: addressComponent.city,
-              district: addressComponent.district
-            }
-          }
-        })
-      })
-    }
-
-    // 如果有经纬度，显示标记
-    if (form.value.longitude && form.value.latitude) {
-      updateMarker(form.value.longitude, form.value.latitude)
-      mapInstance.value.setCenter([form.value.longitude, form.value.latitude])
-    }
+    })
+    updateMarker(initialLocation.longitude, initialLocation.latitude)
+    selectedLocation.value = formatSelectedLocation(initialLocation, initialLocation.address || DEFAULT_LOCATION.address)
   })
 }
 
@@ -365,7 +404,11 @@ function searchLocation() {
         district: poi.adname
       }
     } else {
-      proxy.$modal.msgError('未找到相关地点')
+      if (result && result.info === 'USERKEY_PLAT_NOMATCH') {
+        proxy.$modal.msgError('高德地图Key类型不匹配，请使用Web端(JS API)类型的Key')
+      } else {
+        proxy.$modal.msgError('未找到相关地点')
+      }
     }
   })
 }
@@ -392,6 +435,15 @@ function confirmLocation() {
 watch(showMapDialog, (val) => {
   if (val) {
     initAMap()
+  } else {
+    // 关闭时销毁地图实例
+    if (mapInstance.value) {
+      mapInstance.value.destroy()
+      mapInstance.value = null
+    }
+    if (markerInstance.value) {
+      markerInstance.value = null
+    }
   }
 })
 

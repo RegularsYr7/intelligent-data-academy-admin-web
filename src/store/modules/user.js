@@ -1,7 +1,17 @@
 import router from "@/router";
 import { ElMessageBox } from "element-plus";
 import { login, logout, getInfo } from "@/api/login";
-import { getToken, setToken, removeToken } from "@/utils/auth";
+import {
+  getToken,
+  setToken,
+  removeToken,
+  getSchoolInfo,
+  getCollegeInfo,
+  setSchoolInfo,
+  setCollegeInfo,
+  removeSchoolInfo,
+  removeCollegeInfo,
+} from "@/utils/auth";
 import { isHttp, isEmpty } from "@/utils/validate";
 import defAva from "@/assets/images/profile.jpg";
 
@@ -9,11 +19,13 @@ const useUserStore = defineStore("user", {
   state: () => ({
     token: getToken(),
     id: "",
-    name: "",
+    userName: "",
     nickName: "",
     avatar: "",
     roles: [],
     permissions: [],
+    schoolInfo: getSchoolInfo(),
+    collegeInfo: getCollegeInfo(),
   }),
   actions: {
     // 登录
@@ -54,9 +66,27 @@ const useUserStore = defineStore("user", {
               this.roles = ["ROLE_DEFAULT"];
             }
             this.id = user.userId;
-            this.name = user.userName;
+            this.userName = user.userName;
             this.nickName = user.nickName;
             this.avatar = avatar;
+
+            // 保存学校和学院信息到缓存
+            // 后端返回的是 schoolId 和 collegeId，需要构建对象
+            if (res.schoolId) {
+              this.schoolInfo = {
+                schoolId: res.schoolId,
+                schoolName: user.schoolName || "", // 从用户对象中获取学校名称
+              };
+              setSchoolInfo(this.schoolInfo);
+            }
+            if (res.collegeId) {
+              this.collegeInfo = {
+                collegeId: res.collegeId,
+                collegeName: user.collegeName || "", // 从用户对象中获取学院名称
+              };
+              setCollegeInfo(this.collegeInfo);
+            }
+
             /* 初始密码提示 */
             if (res.isDefaultModifyPwd) {
               ElMessageBox.confirm(
@@ -110,7 +140,11 @@ const useUserStore = defineStore("user", {
             this.token = "";
             this.roles = [];
             this.permissions = [];
+            this.schoolInfo = null;
+            this.collegeInfo = null;
             removeToken();
+            removeSchoolInfo();
+            removeCollegeInfo();
             resolve();
           })
           .catch((error) => {

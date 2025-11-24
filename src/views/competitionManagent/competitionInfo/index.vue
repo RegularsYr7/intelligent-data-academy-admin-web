@@ -3,12 +3,6 @@
     <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="100px">
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-form-item label="竞赛编码" prop="competitionCode">
-            <el-input v-model="queryParams.competitionCode" placeholder="请输入竞赛编码" clearable
-              @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
           <el-form-item label="竞赛名称" prop="competitionName">
             <el-input v-model="queryParams.competitionName" placeholder="请输入竞赛名称" clearable
               @keyup.enter="handleQuery" />
@@ -17,83 +11,20 @@
         <el-col :span="6">
           <el-form-item label="竞赛分类" prop="competitionCategory">
             <el-select v-model="queryParams.competitionCategory" placeholder="请选择竞赛分类" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_competition_category" :key="dict.value" :label="dict.label"
-                :value="dict.value" />
+              <el-option v-for="(dict, index) in edu_competition_category" :key="'category_' + index"
+                :label="dict.label" :value="dict.value" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="6">
           <el-form-item label="竞赛级别" prop="competitionLevel">
             <el-select v-model="queryParams.competitionLevel" placeholder="请选择竞赛级别" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_competition_level" :key="dict.value" :label="dict.label"
+              <el-option v-for="(dict, index) in edu_competition_level" :key="'level_' + index" :label="dict.label"
                 :value="dict.value" />
             </el-select>
           </el-form-item>
         </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="主办单位" prop="organizer">
-            <el-input v-model="queryParams.organizer" placeholder="请输入主办单位" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="报名开始时间">
-            <el-date-picker v-model="daterangeRegistrationStartTime" value-format="YYYY-MM-DD" type="daterange"
-              range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="报名结束时间">
-            <el-date-picker v-model="daterangeRegistrationEndTime" value-format="YYYY-MM-DD" type="daterange"
-              range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="竞赛开始时间">
-            <el-date-picker v-model="daterangeCompetitionStartTime" value-format="YYYY-MM-DD" type="daterange"
-              range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="竞赛地点" prop="competitionLocation">
-            <el-input v-model="queryParams.competitionLocation" placeholder="请输入竞赛地点" clearable
-              @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="竞赛状态" prop="competitionStatus">
-            <el-select v-model="queryParams.competitionStatus" placeholder="请选择竞赛状态" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_competition_status" :key="dict.value" :label="dict.label"
-                :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="是否发布" prop="isPublished">
-            <el-select v-model="queryParams.isPublished" placeholder="请选择是否发布" clearable style="width: 100%;">
-              <el-option v-for="dict in sys_yes_no" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 100%;">
-              <el-option v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="创建时间">
-            <el-date-picker v-model="daterangeCreateTime" value-format="YYYY-MM-DD" type="daterange" range-separator="-"
-              start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
-        <el-col :span="18" style="text-align: right;">
+        <el-col :span="6" style="text-align: right;">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -124,25 +55,51 @@
 
     <el-table v-loading="loading" :data="competitionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="竞赛编码" align="center" prop="competitionCode" />
-      <el-table-column label="竞赛名称" align="center" prop="competitionName" />
-      <el-table-column label="竞赛分类" align="center" prop="competitionCategory">
+      <el-table-column label="竞赛名称" align="center" prop="competitionName" min-width="150" show-overflow-tooltip />
+      <el-table-column label="竞赛分类" align="center" prop="competitionCategory" width="120">
         <template #default="scope">
           <dict-tag :options="edu_competition_category" :value="scope.row.competitionCategory" />
         </template>
       </el-table-column>
-      <el-table-column label="竞赛级别" align="center" prop="competitionLevel">
+      <el-table-column label="竞赛级别" align="center" prop="competitionLevel" width="120">
         <template #default="scope">
           <dict-tag :options="edu_competition_level" :value="scope.row.competitionLevel" />
         </template>
       </el-table-column>
-      <el-table-column label="竞赛地点" align="center" prop="competitionLocation" />
-      <el-table-column label="竞赛状态" align="center" prop="competitionStatus">
+      <el-table-column label="主办单位" align="center" prop="organizer" min-width="150" show-overflow-tooltip />
+      <el-table-column label="报名时间" align="center" width="200">
+        <template #default="scope">
+          <div>{{ parseTime(scope.row.registrationStartTime, '{y}-{m}-{d}') }}</div>
+          <div>至</div>
+          <div>{{ parseTime(scope.row.registrationEndTime, '{y}-{m}-{d}') }}</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="竞赛时间" align="center" width="200">
+        <template #default="scope">
+          <div>{{ parseTime(scope.row.competitionStartTime, '{y}-{m}-{d}') }}</div>
+          <div>至</div>
+          <div>{{ parseTime(scope.row.competitionEndTime, '{y}-{m}-{d}') }}</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="竞赛地点" align="center" prop="competitionLocation" min-width="120" show-overflow-tooltip />
+      <el-table-column label="最大人数" align="center" prop="maxParticipants" width="100" />
+      <el-table-column label="报名费用" align="center" prop="registrationFee" width="100" />
+      <el-table-column label="竞赛状态" align="center" prop="competitionStatus" width="100">
         <template #default="scope">
           <dict-tag :options="edu_competition_status" :value="scope.row.competitionStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="是否发布" align="center" prop="isPublished" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_yes_no" :value="scope.row.isPublished" />
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" align="center" prop="status" width="80">
+        <template #default="scope">
+          <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['edu:competition:edit']">修改</el-button>
@@ -160,27 +117,15 @@
       <el-form ref="competitionRef" :model="form" :rules="rules" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="竞赛编码" prop="competitionCode">
-              <el-input v-model="form.competitionCode" placeholder="请输入竞赛编码" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
             <el-form-item label="竞赛名称" prop="competitionName">
               <el-input v-model="form.competitionName" placeholder="请输入竞赛名称" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
-            <el-form-item label="竞赛英文名称" prop="competitionNameEn">
-              <el-input v-model="form.competitionNameEn" placeholder="请输入竞赛英文名称" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="竞赛分类" prop="competitionCategory">
               <el-select v-model="form.competitionCategory" placeholder="请选择竞赛分类" style="width: 100%;">
-                <el-option v-for="dict in edu_competition_category" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
+                <el-option v-for="(dict, index) in edu_competition_category" :key="'form_category_' + index"
+                  :label="dict.label" :value="dict.value"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -189,8 +134,8 @@
           <el-col :span="12">
             <el-form-item label="竞赛级别" prop="competitionLevel">
               <el-select v-model="form.competitionLevel" placeholder="请选择竞赛级别" style="width: 100%;">
-                <el-option v-for="dict in edu_competition_level" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
+                <el-option v-for="(dict, index) in edu_competition_level" :key="'form_level_' + index"
+                  :label="dict.label" :value="dict.value"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -208,8 +153,8 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="报名开始时间" prop="registrationStartTime">
-              <el-date-picker clearable v-model="form.registrationStartTime" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择报名开始时间" style="width: 100%;">
+              <el-date-picker clearable v-model="form.registrationStartTime" type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss" placeholder="请选择报名开始时间" style="width: 100%;">
               </el-date-picker>
             </el-form-item>
           </el-col>
@@ -217,15 +162,15 @@
         <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="报名结束时间" prop="registrationEndTime">
-              <el-date-picker clearable v-model="form.registrationEndTime" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择报名结束时间" style="width: 100%;">
+              <el-date-picker clearable v-model="form.registrationEndTime" type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss" placeholder="请选择报名结束时间" style="width: 100%;">
               </el-date-picker>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="竞赛开始时间" prop="competitionStartTime">
-              <el-date-picker clearable v-model="form.competitionStartTime" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择竞赛开始时间" style="width: 100%;">
+              <el-date-picker clearable v-model="form.competitionStartTime" type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss" placeholder="请选择竞赛开始时间" style="width: 100%;">
               </el-date-picker>
             </el-form-item>
           </el-col>
@@ -233,8 +178,8 @@
         <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="竞赛结束时间" prop="competitionEndTime">
-              <el-date-picker clearable v-model="form.competitionEndTime" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择竞赛结束时间" style="width: 100%;">
+              <el-date-picker clearable v-model="form.competitionEndTime" type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss" placeholder="请选择竞赛结束时间" style="width: 100%;">
               </el-date-picker>
             </el-form-item>
           </el-col>
@@ -270,27 +215,15 @@
         </el-row>
         <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
-            <el-form-item label="联系邮箱" prop="contactEmail">
-              <el-input v-model="form.contactEmail" placeholder="请输入联系邮箱" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="显示顺序" prop="sortOrder">
-              <el-input v-model="form.sortOrder" placeholder="请输入显示顺序" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
-          <el-col :span="12">
             <el-form-item label="竞赛状态" prop="competitionStatus">
               <el-select v-model="form.competitionStatus" placeholder="请选择竞赛状态" style="width: 100%;">
-                <el-option v-for="dict in edu_competition_status" :key="dict.value" :label="dict.label"
+                <el-option v-for="(dict, index) in edu_competition_status" :key="'status_' + index" :label="dict.label"
                   :value="dict.value"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="封面图片URL" prop="coverImage">
+            <el-form-item label="封面图片" prop="coverImage">
               <image-upload v-model="form.coverImage" />
             </el-form-item>
           </el-col>
@@ -298,40 +231,34 @@
         <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="线上地址" prop="onlineLocation">
-              <el-input v-model="form.onlineLocation" type="textarea" placeholder="请输入内容" />
+              <el-input v-model="form.onlineLocation" placeholder="请输入线上地址" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="竞赛规则" prop="competitionRules">
-              <el-input v-model="form.competitionRules" type="textarea" placeholder="请输入内容" />
+              <el-input v-model="form.competitionRules" type="textarea" :rows="3" placeholder="请输入竞赛规则" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="奖项设置" prop="awardInfo">
-              <el-input v-model="form.awardInfo" type="textarea" placeholder="请输入内容" />
+              <el-input v-model="form.awardInfo" type="textarea" :rows="3" placeholder="请输入奖项设置" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="附件URLs" prop="attachmentUrls">
-              <el-input v-model="form.attachmentUrls" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="是否发布" prop="isPublished">
               <el-radio-group v-model="form.isPublished">
-                <el-radio v-for="dict in sys_yes_no" :key="dict.value" :label="dict.value">{{ dict.label }}</el-radio>
+                <el-radio v-for="(dict, index) in sys_yes_no" :key="'published_' + index" :label="dict.value">{{
+                  dict.label
+                }}</el-radio>
               </el-radio-group>
             </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态" prop="status">
+            <el-form-item label="状态" prop="status" style="margin-top: 18px;">
               <el-radio-group v-model="form.status">
-                <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
-                }}</el-radio>
+                <el-radio v-for="(dict, index) in sys_normal_disable" :key="'form_status_' + index"
+                  :label="dict.value">{{
+                    dict.label }}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -365,7 +292,28 @@
 import { listCompetition, getCompetition, delCompetition, addCompetition, updateCompetition } from "@/api/edu/competition"
 
 const { proxy } = getCurrentInstance()
-const { edu_competition_status, edu_competition_category, sys_yes_no, edu_competition_level, sys_normal_disable } = proxy.useDict('edu_competition_status', 'edu_competition_category', 'sys_yes_no', 'edu_competition_level', 'sys_normal_disable')
+const dictData = proxy.useDict('edu_competition_status', 'edu_competition_category', 'sys_yes_no', 'edu_competition_level', 'sys_normal_disable')
+
+// 字典数据去重处理
+const uniqueDict = (dictArray) => {
+  if (!dictArray || !dictArray.value) return []
+  const seen = new Set()
+  return dictArray.value.filter(item => {
+    const key = item.value
+    if (seen.has(key)) {
+      return false
+    }
+    seen.add(key)
+    return true
+  })
+}
+
+// 去重后的字典数据
+const edu_competition_status = computed(() => uniqueDict(dictData.edu_competition_status))
+const edu_competition_category = computed(() => uniqueDict(dictData.edu_competition_category))
+const sys_yes_no = computed(() => uniqueDict(dictData.sys_yes_no))
+const edu_competition_level = computed(() => uniqueDict(dictData.edu_competition_level))
+const sys_normal_disable = computed(() => uniqueDict(dictData.sys_normal_disable))
 
 const competitionList = ref([])
 const open = ref(false)

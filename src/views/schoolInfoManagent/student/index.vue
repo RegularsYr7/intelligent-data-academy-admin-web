@@ -23,7 +23,7 @@
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row :gutter="20" style="margin-top: 18px;">
+      <el-row :gutter="20">
         <el-col :span="6">
           <el-form-item label="入学时间">
             <el-date-picker v-model="daterangeEnrollmentDate" value-format="YYYY-MM-DD" type="daterange"
@@ -46,64 +46,12 @@
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="血型" prop="bloodType">
-            <el-select v-model="queryParams.bloodType" placeholder="请选择血型" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_blood_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20" style="margin-top: 18px;">
-        <el-col :span="6">
-          <el-form-item label="学校ID" prop="schoolId">
-            <el-input v-model="queryParams.schoolId" placeholder="请输入学校ID" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="学院ID" prop="collegeId">
-            <el-input v-model="queryParams.collegeId" placeholder="请输入学院ID" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="专业ID" prop="majorId">
-            <el-input v-model="queryParams.majorId" placeholder="请输入专业ID" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="班级ID" prop="classId">
-            <el-input v-model="queryParams.classId" placeholder="请输入班级ID" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20" style="margin-top: 18px;">
-        <el-col :span="6">
           <el-form-item label="年级" prop="grade">
             <el-input v-model="queryParams.grade" placeholder="请输入年级" clearable @keyup.enter="handleQuery" />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label="培养层次" prop="educationLevel">
-            <el-select v-model="queryParams.educationLevel" placeholder="请选择培养层次" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_education_level" :key="dict.value" :label="dict.label"
-                :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 100%;">
-              <el-option v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="创建时间" prop="createTime">
-            <el-date-picker clearable v-model="queryParams.createTime" type="date" value-format="YYYY-MM-DD"
-              placeholder="请选择创建时间" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
       </el-row>
-      <el-row :gutter="20" style="margin-top: 18px;">
+      <el-row :gutter="20">
         <el-col :span="24">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -137,16 +85,25 @@
       <el-table-column label="学号" align="center" prop="studentNo" min-width="120" show-overflow-tooltip />
       <el-table-column label="姓名" align="center" prop="studentName" min-width="100" show-overflow-tooltip />
       <el-table-column label="手机号" align="center" prop="phoneCode" min-width="120" show-overflow-tooltip />
-      <el-table-column label="班级ID" align="center" prop="classId" min-width="100" show-overflow-tooltip />
+      <el-table-column label="班级" align="center" prop="classId" min-width="120" show-overflow-tooltip>
+        <template #default="scope">
+          <span>{{classOptions.find(c => c.classId === scope.row.classId)?.className || scope.row.classId}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="专业" align="center" prop="majorId" min-width="120" show-overflow-tooltip>
+        <template #default="scope">
+          <span>{{majorOptions.find(m => m.majorId === scope.row.majorId)?.majorName || scope.row.majorId}}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="年级" align="center" prop="grade" width="80" />
+      <el-table-column label="入学时间" align="center" prop="enrollmentDate" width="110">
+        <template #default="scope">
+          <span>{{ parseTime(scope.row.enrollmentDate, '{y}-{m}-{d}') }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" align="center" prop="status" width="80">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="110">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="150" fixed="right">
@@ -172,20 +129,20 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="姓名" prop="studentName">
-              <el-input v-model="form.studentName" placeholder="请输入姓名" />
+            <el-form-item label="密码" prop="password">
+              <el-input v-model="form.password" placeholder="请输入密码" type="password" show-password />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="身份证号" prop="idCard">
-              <el-input v-model="form.idCard" placeholder="请输入身份证号" />
+            <el-form-item label="姓名" prop="studentName">
+              <el-input v-model="form.studentName" placeholder="请输入姓名" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="密码" prop="password">
-              <el-input v-model="form.password" placeholder="请输入密码" type="password" show-password />
+            <el-form-item label="身份证号" prop="idCard">
+              <el-input v-model="form.idCard" placeholder="请输入身份证号" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -196,9 +153,9 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="生日" prop="birthday">
-              <el-date-picker clearable v-model="form.birthday" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择生日" style="width: 100%;">
+            <el-form-item label="入学时间" prop="enrollmentDate">
+              <el-date-picker clearable v-model="form.enrollmentDate" type="date" value-format="YYYY-MM-DD"
+                placeholder="请选择入学时间" style="width: 100%;">
               </el-date-picker>
             </el-form-item>
           </el-col>
@@ -223,8 +180,8 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="家乡" prop="hometown">
-              <el-input v-model="form.hometown" placeholder="请输入家乡" />
+            <el-form-item label="年级" prop="grade">
+              <el-input v-model="form.grade" placeholder="请输入年级" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -238,85 +195,47 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="入学时间" prop="enrollmentDate">
-              <el-date-picker clearable v-model="form.enrollmentDate" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择入学时间" style="width: 100%;">
-              </el-date-picker>
+            <el-form-item label="学校" prop="schoolId">
+              <el-select v-model="form.schoolId" placeholder="请选择学校" style="width: 100%;" filterable>
+                <el-option v-for="item in schoolOptions" :key="item.schoolId" :label="item.schoolName"
+                  :value="item.schoolId"></el-option>
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="毕业时间" prop="graduationDate">
-              <el-date-picker clearable v-model="form.graduationDate" type="date" value-format="YYYY-MM-DD"
-                placeholder="请选择毕业时间" style="width: 100%;">
-              </el-date-picker>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="学校ID" prop="schoolId">
-              <el-input v-model="form.schoolId" placeholder="请输入学校ID" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="学院ID" prop="collegeId">
-              <el-input v-model="form.collegeId" placeholder="请输入学院ID" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="专业ID" prop="majorId">
-              <el-input v-model="form.majorId" placeholder="请输入专业ID" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="班级ID" prop="classId">
-              <el-input v-model="form.classId" placeholder="请输入班级ID" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="年级" prop="grade">
-              <el-input v-model="form.grade" placeholder="请输入年级" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="培养层次" prop="educationLevel">
-              <el-select v-model="form.educationLevel" placeholder="请选择培养层次" style="width: 100%;">
-                <el-option v-for="dict in edu_education_level" :key="dict.value" :label="dict.label"
-                  :value="dict.value"></el-option>
+            <el-form-item label="学院" prop="collegeId">
+              <el-select v-model="form.collegeId" placeholder="请选择学院" style="width: 100%;" filterable>
+                <el-option v-for="item in collegeOptions" :key="item.collegeId" :label="item.collegeName"
+                  :value="item.collegeId"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="学制" prop="schoolingLength">
-              <el-input v-model="form.schoolingLength" placeholder="请输入学制" />
+            <el-form-item label="专业" prop="majorId">
+              <el-select v-model="form.majorId" placeholder="请选择专业" style="width: 100%;" filterable>
+                <el-option v-for="item in majorOptions" :key="item.majorId" :label="item.majorName"
+                  :value="item.majorId"></el-option>
+              </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="班级" prop="classId">
+              <el-select v-model="form.classId" placeholder="请选择班级" style="width: 100%;" filterable>
+                <el-option v-for="item in classOptions" :key="item.classId" :label="item.className"
+                  :value="item.classId"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
                 <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
                 }}</el-radio>
               </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="头像URL" prop="avatarUrl">
-              <image-upload v-model="form.avatarUrl" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="备注" prop="remark">
-              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -333,11 +252,20 @@
 
 <script setup name="Student">
 import { listStudent, getStudent, delStudent, addStudent, updateStudent } from "@/api/edu/student"
+import { listSchool } from "@/api/edu/school";
+import { listCollege } from "@/api/edu/college";
+import { listMajor } from "@/api/edu/major";
+import { listClass } from "@/api/edu/class";
 
 const { proxy } = getCurrentInstance()
 const { edu_blood_type, edu_political_status, edu_nation, sys_normal_disable, edu_education_level } = proxy.useDict('edu_blood_type', 'edu_political_status', 'edu_nation', 'sys_normal_disable', 'edu_education_level')
 
 const studentList = ref([])
+const schoolOptions = ref([]);
+const collegeOptions = ref([]);
+const majorOptions = ref([]);
+const classOptions = ref([]);
+
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
@@ -550,5 +478,37 @@ function handleExport() {
   }, `student_${new Date().getTime()}.xlsx`)
 }
 
+/** 查询学校列表 */
+function getSchoolList() {
+  listSchool().then(response => {
+    schoolOptions.value = response.rows;
+  });
+}
+
+/** 查询学院列表 */
+function getCollegeList() {
+  listCollege().then(response => {
+    collegeOptions.value = response.rows;
+  });
+}
+
+/** 查询专业列表 */
+function getMajorList() {
+  listMajor().then(response => {
+    majorOptions.value = response.rows;
+  });
+}
+
+/** 查询班级列表 */
+function getClassList() {
+  listClass().then(response => {
+    classOptions.value = response.rows;
+  });
+}
+
+getSchoolList();
+getCollegeList();
+getMajorList();
+getClassList();
 getList()
 </script>

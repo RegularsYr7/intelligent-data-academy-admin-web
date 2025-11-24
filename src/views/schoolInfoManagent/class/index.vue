@@ -55,8 +55,15 @@
       <el-table-column label="班级名称" align="center" prop="className" min-width="120" />
       <el-table-column label="班级年级" align="center" prop="grade" width="100" />
       <el-table-column label="入学年份" align="center" prop="enrollmentYear" width="100" />
+      <el-table-column label="辅导员姓名" align="center" width="120">
+        <template #default="scope">
+          <span v-if="scope.row.counselors && scope.row.counselors.length > 0">
+            {{scope.row.counselors.map(c => c.nickName).join(', ')}}
+          </span>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="班级简介" align="center" prop="description" min-width="200" show-overflow-tooltip />
-      <el-table-column label="显示顺序" align="center" prop="sortOrder" width="100" />
       <el-table-column label="状态" align="center" prop="status" width="80">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
@@ -104,8 +111,8 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="24">
-            <el-form-item label="入学年份" prop="enrollmentYear">
-              <el-date-picker v-model="form.enrollmentYear" type="year" value-format="YYYY" placeholder="请选择入学年份"
+            <el-form-item label="入学年份" prop="grade">
+              <el-date-picker v-model="form.grade" type="year" value-format="YYYY" placeholder="请选择入学年份"
                 style="width: 100%;">
               </el-date-picker>
             </el-form-item>
@@ -119,11 +126,6 @@
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="显示顺序" prop="sortOrder">
-              <el-input-number v-model="form.sortOrder" :min="0" controls-position="right" style="width: 100%;" />
-            </el-form-item>
-          </el-col>
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
@@ -217,6 +219,8 @@ function reset() {
     className: null,
     grade: null,
     enrollmentYear: null,
+    classTeacherId: null,
+    classTeacherName: null,
     description: null,
     sortOrder: 0,
     status: "0"
