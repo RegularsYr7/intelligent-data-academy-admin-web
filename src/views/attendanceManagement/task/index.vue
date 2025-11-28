@@ -3,10 +3,40 @@
     <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="100px">
       <el-row :gutter="20">
         <el-col :span="6">
+          <el-form-item label="学校" prop="schoolId">
+            <el-select v-model="queryParams.schoolId" placeholder="请选择学校" clearable filterable
+              @change="handleQuerySchoolChange" style="width: 100%;">
+              <el-option v-for="item in schoolOptions" :key="item.schoolId" :label="item.schoolName"
+                :value="item.schoolId" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="学院" prop="collegeId">
+            <el-select v-model="queryParams.collegeId" :placeholder="queryParams.schoolId ? '请选择学院' : '请先选择学校'"
+              :disabled="!queryParams.schoolId" clearable filterable @change="handleQueryCollegeChange"
+              style="width: 100%;">
+              <el-option v-for="item in queryFilteredCollegeList" :key="item.collegeId" :label="item.collegeName"
+                :value="item.collegeId" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="班级" prop="classId">
+            <el-select v-model="queryParams.classId" :placeholder="queryParams.collegeId ? '请选择班级' : '请先选择学院'"
+              :disabled="!queryParams.collegeId" clearable filterable style="width: 100%;">
+              <el-option v-for="item in queryFilteredClassList" :key="item.classId" :label="item.className"
+                :value="item.classId" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
           <el-form-item label="任务名称" prop="taskName">
             <el-input v-model="queryParams.taskName" placeholder="请输入任务名称" clearable @keyup.enter="handleQuery" />
           </el-form-item>
         </el-col>
+      </el-row>
+      <el-row :gutter="20">
         <el-col :span="6">
           <el-form-item label="任务类型" prop="taskType">
             <el-select v-model="queryParams.taskType" placeholder="请选择任务类型" clearable style="width: 100%;">
@@ -15,7 +45,7 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="12" style="text-align: right;">
+        <el-col :span="18" style="text-align: right;">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -44,8 +74,17 @@
     </el-row>
 
     <el-table v-loading="loading" :data="taskList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" fixed />
-      <el-table-column label="任务名称" align="center" prop="taskName" min-width="150" show-overflow-tooltip />
+      <el-table-column type="selection" width="55" align="center" fixed="left" />
+      <el-table-column label="任务名称" align="center" prop="taskName" min-width="150" show-overflow-tooltip fixed="left" />
+      <el-table-column label="学校" align="center" prop="schoolName" min-width="120" show-overflow-tooltip />
+      <el-table-column label="学院" align="center" prop="collegeName" min-width="140" show-overflow-tooltip />
+      <el-table-column label="班级" align="center" min-width="200">
+        <template #default="scope">
+          <div v-if="scope.row.classNames" style="white-space: pre-line;">
+            {{ scope.row.classNames.replace(/, /g, '\n') }}
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="任务类型" align="center" width="120">
         <template #default="scope">
           <dict-tag :options="edu_checkin_task_type" :value="scope.row.taskType" />
@@ -103,8 +142,33 @@
       <el-form ref="taskRef" :model="form" :rules="rules" label-width="140px">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="签到名称" prop="taskName">
-              <el-input v-model="form.taskName" placeholder="请输入签到名称" />
+            <el-form-item label="学校" prop="schoolId">
+              <el-select v-model="form.schoolId" placeholder="请选择学校" @change="handleFormSchoolChange"
+                style="width: 100%;" filterable>
+                <el-option v-for="item in schoolOptions" :key="item.schoolId" :label="item.schoolName"
+                  :value="item.schoolId"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="学院" prop="collegeId">
+              <el-select v-model="form.collegeId" :placeholder="form.schoolId ? '请选择学院' : '请先选择学校'"
+                :disabled="!form.schoolId" @change="handleFormCollegeChange" style="width: 100%;" filterable>
+                <el-option v-for="item in formFilteredCollegeList" :key="item.collegeId" :label="item.collegeName"
+                  :value="item.collegeId"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="班级" prop="classIds">
+              <el-select v-model="form.classIds" :placeholder="form.collegeId ? '请选择班级(可多选)' : '请先选择学院'"
+                :disabled="!form.collegeId" style="width: 100%;" filterable multiple collapse-tags
+                collapse-tags-tooltip>
+                <el-option v-for="item in formFilteredClassList" :key="item.classId" :label="item.className"
+                  :value="item.classId"></el-option>
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -118,21 +182,10 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="签到开始时间" prop="startTime">
-              <el-date-picker clearable v-model="form.startTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss"
-                placeholder="请选择签到开始时间" style="width: 100%;">
-              </el-date-picker>
+            <el-form-item label="任务名称" prop="taskName">
+              <el-input v-model="form.taskName" placeholder="请输入任务名称" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="签到结束时间" prop="endTime">
-              <el-date-picker clearable v-model="form.endTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss"
-                placeholder="请选择签到结束时间" style="width: 100%;">
-              </el-date-picker>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="是否允许迟到" prop="allowLate">
               <el-radio-group v-model="form.allowLate" @change="handleAllowLateChange">
@@ -140,8 +193,26 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="form.allowLate === 'Y'">
-            <el-form-item label="允许迟到分钟数" prop="lateMinutes">
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="开始时间" prop="startTime">
+              <el-date-picker clearable v-model="form.startTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss"
+                placeholder="请选择开始时间" style="width: 100%;">
+              </el-date-picker>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="结束时间" prop="endTime">
+              <el-date-picker clearable v-model="form.endTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss"
+                placeholder="请选择结束时间" style="width: 100%;">
+              </el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20" v-if="form.allowLate === 'Y'">
+          <el-col :span="12">
+            <el-form-item label="迟到分钟数" prop="lateMinutes">
               <el-input v-model.number="form.lateMinutes" placeholder="请输入允许迟到的分钟数" type="number" />
             </el-form-item>
           </el-col>
@@ -163,36 +234,13 @@
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="签到范围(米)" prop="locationRange">
-              <el-input v-model.number="form.locationRange" placeholder="请输入签到范围" type="number" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="经纬度" prop="targetLongitude">
-              <el-input v-model="form.targetLongitude" placeholder="点击地图选择位置自动填充" readonly
-                @click="showMapDialog = true">
+          <el-col :span="24">
+            <el-form-item label="目标地点" prop="targetAddress">
+              <el-input v-model="form.targetAddress" placeholder="点击右侧按钮选择地图位置">
                 <template #append>
-                  <el-button icon="Location" @click="showMapDialog = true" />
+                  <el-button icon="Location" @click="showMapDialog = true">选择位置</el-button>
                 </template>
               </el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="班级列表" prop="classIds">
-              <el-select v-model="selectedClasses" multiple placeholder="请选择班级" style="width: 100%;"
-                @change="handleClassChange">
-                <el-option v-for="cls in classList" :key="cls.classId" :label="cls.className" :value="cls.classId" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="目标地点名称" prop="targetAddress">
-              <el-input v-model="form.targetAddress" placeholder="地图自动填充或手动输入" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -238,24 +286,37 @@
     <!-- 签到记录对话框 -->
     <el-dialog title="签到记录" v-model="recordDialogVisible" width="1400px" append-to-body>
       <el-table v-loading="recordLoading" :data="recordList" max-height="500">
-        <el-table-column label="学生姓名" align="center" prop="studentName" min-width="100" show-overflow-tooltip />
-        <el-table-column label="学号" align="center" prop="studentNo" min-width="120" show-overflow-tooltip />
-        <el-table-column label="班级名称" align="center" prop="className" min-width="120" show-overflow-tooltip />
-        <el-table-column label="签到状态" align="center" width="100">
+        <el-table-column label="签到照片" align="center" width="100" fixed="left">
           <template #default="scope">
-            <el-tag v-if="scope.row.checkinStatus">{{ getDictLabel(edu_checkin_status, scope.row.checkinStatus)
-            }}</el-tag>
+            <el-image v-if="scope.row.photoUrl" :src="scope.row.photoUrl" :preview-src-list="[scope.row.photoUrl]"
+              fit="cover" :hide-on-click-modal="true" :z-index="9999"
+              style="width: 60px; height: 60px; cursor: pointer; border-radius: 4px;" />
+            <span v-else style="color: #999;">无</span>
           </template>
         </el-table-column>
-        <el-table-column label="签到时间" align="center" prop="checkinTime" width="180">
+        <el-table-column label="学生姓名" align="center" prop="studentName" width="100" show-overflow-tooltip />
+        <el-table-column label="学号" align="center" prop="studentNo" width="140" show-overflow-tooltip />
+        <el-table-column label="班级名称" align="center" prop="className" min-width="150" show-overflow-tooltip />
+        <el-table-column label="签到状态" align="center" width="100">
+          <template #default="scope">
+            <dict-tag :options="edu_checkin_status" :value="scope.row.checkinStatus" />
+          </template>
+        </el-table-column>
+        <el-table-column label="签到时间" align="center" width="160">
           <template #default="scope">
             <span>{{ parseTime(scope.row.checkinTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="签到地点" align="center" prop="address" min-width="150" show-overflow-tooltip />
-        <el-table-column label="经度" align="center" prop="longitude" width="100" show-overflow-tooltip />
-        <el-table-column label="纬度" align="center" prop="latitude" width="100" show-overflow-tooltip />
-        <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+        <el-table-column label="签到地点" align="center" prop="address" min-width="180" show-overflow-tooltip />
+        <el-table-column label="经纬度" align="center" width="180">
+          <template #default="scope">
+            <div style="font-size: 12px; line-height: 1.4;">
+              <div>{{ scope.row.longitude }}</div>
+              <div>{{ scope.row.latitude }}</div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="记录时间" align="center" width="160">
           <template #default="scope">
             <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
           </template>
@@ -275,6 +336,8 @@
 <script setup name="Task">
 import { listTask, getTask, delTask, addTask, updateTask } from "@/api/edu/task"
 import { listRecord, delRecord } from "@/api/edu/record"
+import { listSchool } from "@/api/edu/school"
+import { listCollege } from "@/api/edu/college"
 import { listClass } from "@/api/edu/class"
 import { loadAMap } from "@/utils/amap"
 
@@ -282,8 +345,9 @@ const { proxy } = getCurrentInstance()
 const { edu_checkin_status, sys_yes_no, edu_checkin_task_type } = proxy.useDict('edu_checkin_status', 'sys_yes_no', 'edu_checkin_task_type')
 
 const taskList = ref([])
-const classList = ref([])
-const selectedClasses = ref([])
+const schoolOptions = ref([])
+const collegeOptions = ref([])
+const classOptions = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
@@ -327,18 +391,27 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
+    schoolId: null,
+    collegeId: null,
+    classId: null,
     taskName: null,
     taskType: null,
   },
   rules: {
+    schoolId: [
+      { required: true, message: "学校不能为空", trigger: "change" }
+    ],
+    collegeId: [
+      { required: true, message: "学院不能为空", trigger: "change" }
+    ],
+    classIds: [
+      { required: true, message: "班级不能为空", trigger: "change" }
+    ],
     taskName: [
       { required: true, message: "签到名称不能为空", trigger: "blur" }
     ],
     taskType: [
       { required: true, message: "任务类型不能为空", trigger: "change" }
-    ],
-    classIds: [
-      { required: true, message: "班级列表不能为空", trigger: "change" }
     ],
     startTime: [
       { required: true, message: "签到开始时间不能为空", trigger: "blur" }
@@ -357,10 +430,70 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+// 计算属性：查询表单中根据学校筛选学院
+const queryFilteredCollegeList = computed(() => {
+  if (!queryParams.value.schoolId) return [];
+  return collegeOptions.value.filter(item => item.schoolId === queryParams.value.schoolId);
+});
+
+// 计算属性：查询表单中根据学院筛选班级
+const queryFilteredClassList = computed(() => {
+  if (!queryParams.value.collegeId) return [];
+  return classOptions.value.filter(item => item.collegeId === queryParams.value.collegeId);
+});
+
+// 计算属性：表单对话框中根据学校筛选学院
+const formFilteredCollegeList = computed(() => {
+  if (!form.value.schoolId) return [];
+  return collegeOptions.value.filter(item => item.schoolId === form.value.schoolId);
+});
+
+// 计算属性：表单对话框中根据学院筛选班级
+const formFilteredClassList = computed(() => {
+  if (!form.value.collegeId) return [];
+  return classOptions.value.filter(item => item.collegeId === form.value.collegeId);
+});
+
+// 查询表单学校变更处理
+function handleQuerySchoolChange() {
+  queryParams.value.collegeId = null;
+  queryParams.value.classId = null;
+}
+
+// 查询表单学院变更处理
+function handleQueryCollegeChange() {
+  queryParams.value.classId = null;
+}
+
+// 表单对话框学校变更处理
+function handleFormSchoolChange() {
+  form.value.collegeId = null;
+  form.value.classIds = [];
+}
+
+// 表单对话框学院变更处理
+function handleFormCollegeChange() {
+  form.value.classIds = [];
+}
+
+/** 查询学校列表 */
+function getSchoolList() {
+  listSchool({ pageNum: 1, pageSize: 1000, status: '0' }).then(response => {
+    schoolOptions.value = response.rows
+  })
+}
+
+/** 查询学院列表 */
+function getCollegeList() {
+  listCollege({ pageNum: 1, pageSize: 1000, status: '0' }).then(response => {
+    collegeOptions.value = response.rows
+  })
+}
+
 /** 查询班级列表 */
 function getClassList() {
   listClass({ pageNum: 1, pageSize: 1000, status: '0' }).then(response => {
-    classList.value = response.rows
+    classOptions.value = response.rows
   })
 }
 
@@ -384,9 +517,12 @@ function cancel() {
 function reset() {
   form.value = {
     taskId: null,
+    schoolId: null,
+    collegeId: null,
+    classIds: [],
     taskName: null,
     taskType: null,
-    classIds: null,
+    totalStudents: null,
     startTime: null,
     endTime: null,
     allowLate: null,
@@ -399,7 +535,6 @@ function reset() {
     targetAddress: null,
     remark: null
   }
-  selectedClasses.value = []
   proxy.resetForm("taskRef")
 }
 
@@ -408,11 +543,6 @@ function handleAllowLateChange(val) {
   if (val === 'N') {
     form.value.lateMinutes = null
   }
-}
-
-/** 班级选择改变 */
-function handleClassChange(val) {
-  form.value.classIds = val.join(',')
 }
 
 /** 地图搜索 */
@@ -590,9 +720,9 @@ function handleUpdate(row) {
   const _taskId = row.taskId || ids.value
   getTask(_taskId).then(response => {
     form.value = response.data
-    // 解析班级ID列表
-    if (form.value.classIds) {
-      selectedClasses.value = form.value.classIds.split(',').map(id => parseInt(id))
+    // 将逗号分隔的字符串转为数组
+    if (form.value.classIds && typeof form.value.classIds === 'string') {
+      form.value.classIds = form.value.classIds.split(',').map(id => parseInt(id));
     }
     open.value = true
     title.value = "修改签到任务"
@@ -603,14 +733,20 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["taskRef"].validate(valid => {
     if (valid) {
+      // 将班级ID数组转为逗号分隔的字符串
+      const submitData = {
+        ...form.value,
+        classIds: Array.isArray(form.value.classIds) ? form.value.classIds.join(',') : form.value.classIds
+      };
+
       if (form.value.taskId != null) {
-        updateTask(form.value).then(response => {
+        updateTask(submitData).then(response => {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
         })
       } else {
-        addTask(form.value).then(response => {
+        addTask(submitData).then(response => {
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()
@@ -667,6 +803,8 @@ function handleDeleteRecord(row) {
   }).catch(() => { })
 }
 
+getSchoolList()
+getCollegeList()
 getClassList()
 getList()
 </script>

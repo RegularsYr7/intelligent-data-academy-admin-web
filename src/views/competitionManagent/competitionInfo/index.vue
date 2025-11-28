@@ -3,6 +3,14 @@
     <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="100px">
       <el-row :gutter="20">
         <el-col :span="6">
+          <el-form-item label="所属学校" prop="schoolId">
+            <el-select v-model="queryParams.schoolId" placeholder="请选择学校" clearable filterable style="width: 100%;">
+              <el-option v-for="item in schoolOptions" :key="item.schoolId" :label="item.schoolName"
+                :value="item.schoolId" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
           <el-form-item label="竞赛名称" prop="competitionName">
             <el-input v-model="queryParams.competitionName" placeholder="请输入竞赛名称" clearable
               @keyup.enter="handleQuery" />
@@ -24,7 +32,9 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="6" style="text-align: right;">
+      </el-row>
+      <el-row :gutter="20">
+        <el-col :span="24" style="text-align: right;">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -54,14 +64,20 @@
     </el-row>
 
     <el-table v-loading="loading" :data="competitionList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="竞赛名称" align="center" prop="competitionName" min-width="150" show-overflow-tooltip />
-      <el-table-column label="竞赛分类" align="center" prop="competitionCategory" width="120">
+      <el-table-column type="selection" width="55" align="center" fixed="left" />
+      <el-table-column label="竞赛名称" align="center" prop="competitionName" min-width="150" show-overflow-tooltip
+        fixed="left" />
+      <el-table-column label="所属学校" align="center" prop="schoolId" min-width="120" show-overflow-tooltip>
+        <template #default="scope">
+          <span>{{schoolOptions.find(s => s.schoolId === scope.row.schoolId)?.schoolName || '-'}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="竞赛分类" align="center" prop="competitionCategory" min-width="120">
         <template #default="scope">
           <dict-tag :options="edu_competition_category" :value="scope.row.competitionCategory" />
         </template>
       </el-table-column>
-      <el-table-column label="竞赛级别" align="center" prop="competitionLevel" width="120">
+      <el-table-column label="竞赛级别" align="center" prop="competitionLevel" min-width="120">
         <template #default="scope">
           <dict-tag :options="edu_competition_level" :value="scope.row.competitionLevel" />
         </template>
@@ -117,10 +133,20 @@
       <el-form ref="competitionRef" :model="form" :rules="rules" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="所属学校" prop="schoolId">
+              <el-select v-model="form.schoolId" placeholder="请选择学校" filterable style="width: 100%;">
+                <el-option v-for="item in schoolOptions" :key="item.schoolId" :label="item.schoolName"
+                  :value="item.schoolId"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="竞赛名称" prop="competitionName">
               <el-input v-model="form.competitionName" placeholder="请输入竞赛名称" />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="竞赛分类" prop="competitionCategory">
               <el-select v-model="form.competitionCategory" placeholder="请选择竞赛分类" style="width: 100%;">
@@ -129,8 +155,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="竞赛级别" prop="competitionLevel">
               <el-select v-model="form.competitionLevel" placeholder="请选择竞赛级别" style="width: 100%;">
@@ -139,18 +163,20 @@
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="主办单位" prop="organizer">
               <el-input v-model="form.organizer" placeholder="请输入主办单位" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="协办单位" prop="coOrganizer">
               <el-input v-model="form.coOrganizer" placeholder="请输入协办单位" />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="报名开始时间" prop="registrationStartTime">
               <el-date-picker clearable v-model="form.registrationStartTime" type="datetime"
@@ -158,8 +184,6 @@
               </el-date-picker>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20" style="margin-top: 18px;">
           <el-col :span="12">
             <el-form-item label="报名结束时间" prop="registrationEndTime">
               <el-date-picker clearable v-model="form.registrationEndTime" type="datetime"
@@ -290,6 +314,7 @@
 
 <script setup name="Competition">
 import { listCompetition, getCompetition, delCompetition, addCompetition, updateCompetition } from "@/api/edu/competition"
+import { listSchool } from "@/api/edu/school"
 
 const { proxy } = getCurrentInstance()
 const dictData = proxy.useDict('edu_competition_status', 'edu_competition_category', 'sys_yes_no', 'edu_competition_level', 'sys_normal_disable')
@@ -316,6 +341,7 @@ const edu_competition_level = computed(() => uniqueDict(dictData.edu_competition
 const sys_normal_disable = computed(() => uniqueDict(dictData.sys_normal_disable))
 
 const competitionList = ref([])
+const schoolOptions = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
@@ -336,6 +362,7 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
+    schoolId: null,
     competitionCode: null,
     competitionName: null,
     competitionCategory: null,
@@ -351,6 +378,9 @@ const data = reactive({
     createTime: null,
   },
   rules: {
+    schoolId: [
+      { required: true, message: "所属学校不能为空", trigger: "change" }
+    ],
     competitionName: [
       { required: true, message: "竞赛名称不能为空", trigger: "blur" }
     ],
@@ -431,6 +461,7 @@ function cancel() {
 function reset() {
   form.value = {
     competitionId: null,
+    schoolId: null,
     competitionCode: null,
     competitionName: null,
     competitionNameEn: null,
@@ -553,5 +584,13 @@ function handleExport() {
   }, `competition_${new Date().getTime()}.xlsx`)
 }
 
+/** 获取学校列表 */
+function getSchoolList() {
+  listSchool({ pageNum: 1, pageSize: 1000, status: '0' }).then(response => {
+    schoolOptions.value = response.rows
+  })
+}
+
+getSchoolList()
 getList()
 </script>

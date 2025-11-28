@@ -8,11 +8,29 @@
           </el-form-item>
         </el-col>
         <el-col :span="6">
+          <el-form-item label="学校" prop="schoolId">
+            <el-select v-model="queryParams.schoolId" placeholder="请选择学校" clearable filterable
+              @change="handleSchoolQueryChange">
+              <el-option v-for="item in schoolList" :key="item.schoolId" :label="item.schoolName"
+                :value="item.schoolId" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="学院" prop="collegeId">
+            <el-select v-model="queryParams.collegeId" :placeholder="queryParams.schoolId ? '请选择学院' : '请先选择学校'"
+              :disabled="!queryParams.schoolId" clearable filterable @change="handleQuery">
+              <el-option v-for="item in queryFilteredCollegeList" :key="item.collegeId" :label="item.collegeName"
+                :value="item.collegeId" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
           <el-form-item label="班级名称" prop="className">
             <el-input v-model="queryParams.className" placeholder="请输入班级名称" clearable @keyup.enter="handleQuery" />
           </el-form-item>
         </el-col>
-        <el-col :span="12" style="text-align: right;">
+        <el-col :span="24" style="text-align: right;">
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -44,6 +62,8 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="semesterId" width="80" />
       <el-table-column label="学期名称" align="center" prop="semesterName" min-width="120" />
+      <el-table-column label="学校" align="center" prop="schoolName" width="150" />
+      <el-table-column label="学院" align="center" prop="collegeName" width="180" />
       <el-table-column label="所属班级" align="center" prop="classNameList" min-width="200">
         <template #default="scope">
           <div v-if="scope.row.classNameList">
@@ -101,11 +121,31 @@
           </el-col>
         </el-row>
         <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="学校" prop="schoolId">
+              <el-select v-model="form.schoolId" placeholder="请选择学校" filterable clearable @change="handleSchoolChange"
+                style="width: 100%;">
+                <el-option v-for="item in schoolList" :key="item.schoolId" :label="item.schoolName"
+                  :value="item.schoolId" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="学院" prop="collegeId">
+              <el-select v-model="form.collegeId" :placeholder="form.schoolId ? '请选择学院' : '请先选择学校'"
+                :disabled="!form.schoolId" filterable clearable @change="handleCollegeChange" style="width: 100%;">
+                <el-option v-for="item in filteredCollegeList" :key="item.collegeId" :label="item.collegeName"
+                  :value="item.collegeId" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="所属班级" prop="classIds">
-              <el-select v-model="form.classIds" placeholder="请选择班级（可多选）" multiple filterable collapse-tags
-                style="width: 100%;">
-                <el-option v-for="item in classList" :key="item.classId" :label="item.className"
+              <el-select v-model="form.classIds" :placeholder="form.collegeId ? '请选择班级（可多选）' : '请先选择学院'"
+                :disabled="!form.collegeId" multiple filterable collapse-tags style="width: 100%;">
+                <el-option v-for="item in filteredClassList" :key="item.classId" :label="item.className"
                   :value="item.classId" />
               </el-select>
             </el-form-item>
@@ -183,12 +223,16 @@
 <script setup name="Semester">
 import { listSemester, getSemester, delSemester, addSemester, updateSemester } from "@/api/edu/semester"
 import { listClass } from "@/api/edu/class"
+import { listSchool } from "@/api/edu/school"
+import { listCollege } from "@/api/edu/college"
 
 const { proxy } = getCurrentInstance()
 const { edu_semester_type, sys_normal_disable, sys_yes_no } = proxy.useDict('edu_semester_type', 'sys_normal_disable', 'sys_yes_no')
 
 const semesterList = ref([])
 const classList = ref([])
+const schoolList = ref([])
+const collegeList = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
@@ -205,6 +249,8 @@ const data = reactive({
     pageSize: 10,
     semesterName: null,
     className: null,
+    schoolId: null,
+    collegeId: null,
   },
   rules: {
     semesterName: [
@@ -236,6 +282,50 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+/** 查询表单：根据选择的学校过滤学院列表 */
+const queryFilteredCollegeList = computed(() => {
+  if (!queryParams.value.schoolId) {
+    return [] // 没有选择学校时返回空数组
+  }
+  return collegeList.value.filter(item => item.schoolId === queryParams.value.schoolId)
+})
+
+/** 对话框表单：根据选择的学校过滤学院列表 */
+const filteredCollegeList = computed(() => {
+  if (!form.value.schoolId) {
+    return [] // 没有选择学校时返回空数组
+  }
+  return collegeList.value.filter(item => item.schoolId === form.value.schoolId)
+})
+
+/** 根据选择的学院过滤班级列表 */
+const filteredClassList = computed(() => {
+  if (!form.value.collegeId) {
+    return [] // 没有选择学院时返回空数组
+  }
+  return classList.value.filter(item => item.collegeId === form.value.collegeId)
+})
+
+/** 查询表单：学校选择变化处理 */
+function handleSchoolQueryChange(val) {
+  // 清空学院选择
+  queryParams.value.collegeId = null
+  handleQuery()
+}
+
+/** 对话框表单：学校选择变化处理 */
+function handleSchoolChange(val) {
+  // 清空学院和班级选择
+  form.value.collegeId = null
+  form.value.classIds = []
+}
+
+/** 对话框表单：学院选择变化处理 */
+function handleCollegeChange(val) {
+  // 清空班级选择
+  form.value.classIds = []
+}
+
 /** 查询学期管理列表 */
 function getList() {
   loading.value = true
@@ -253,6 +343,20 @@ function getClassList() {
   })
 }
 
+/** 查询学校列表 */
+function getSchoolList() {
+  listSchool({ pageNum: 1, pageSize: 100, status: '0' }).then(response => {
+    schoolList.value = response.rows
+  })
+}
+
+/** 查询学院列表 */
+function getCollegeList() {
+  listCollege({ pageNum: 1, pageSize: 500, status: '0' }).then(response => {
+    collegeList.value = response.rows
+  })
+}
+
 // 取消按钮
 function cancel() {
   open.value = false
@@ -264,6 +368,8 @@ function reset() {
   form.value = {
     semesterId: null,
     semesterName: null,
+    schoolId: null,
+    collegeId: null,
     classIds: [],
     classId: null,
     startDate: null,
@@ -311,6 +417,15 @@ function handleUpdate(row) {
   const _semesterId = row.semesterId || ids.value
   getSemester(_semesterId).then(response => {
     form.value = response.data
+
+    // 设置学校和学院ID（从行数据中获取）
+    if (row.schoolId) {
+      form.value.schoolId = row.schoolId
+    }
+    if (row.collegeId) {
+      form.value.collegeId = row.collegeId
+    }
+
     // 解析学年字段为两个年份
     if (form.value.academicYear) {
       const years = form.value.academicYear.split('-')
@@ -385,4 +500,6 @@ function handleExport() {
 
 getList()
 getClassList()
+getSchoolList()
+getCollegeList()
 </script>

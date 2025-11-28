@@ -72,7 +72,6 @@
           <span>{{ parseTime(scope.row.displayTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="获奖级别" align="center" prop="awardLevel" width="120" />
       <el-table-column label="浏览量" align="center" prop="viewCount" width="100" />
 
       <el-table-column label="状态" align="center" prop="status" width="80">
