@@ -52,6 +52,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="classId" width="80" />
       <el-table-column label="所属学院" align="center" prop="collegeName" min-width="120" />
+      <el-table-column label="所属专业" align="center" prop="majorName" min-width="150" show-overflow-tooltip />
       <el-table-column label="班级名称" align="center" prop="className" min-width="120" />
       <el-table-column label="班级年级" align="center" prop="grade" width="100" />
       <el-table-column label="入学年份" align="center" prop="enrollmentYear" width="100" />
@@ -88,9 +89,21 @@
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="所属学院" prop="collegeId">
-              <el-select v-model="form.collegeId" placeholder="请选择所属学院" clearable filterable style="width: 100%;">
+              <el-select v-model="form.collegeId" placeholder="请选择所属学院" clearable filterable style="width: 100%;"
+                @change="handleCollegeChange">
                 <el-option v-for="college in allCollegeList" :key="college.collegeId" :label="college.collegeName"
                   :value="college.collegeId"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="所属专业" prop="majorId">
+              <el-select v-model="form.majorId" placeholder="请先选择学院" clearable filterable style="width: 100%;"
+                :disabled="!form.collegeId">
+                <el-option v-for="major in majorList" :key="major.majorId" :label="major.majorName"
+                  :value="major.majorId"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -149,12 +162,14 @@
 <script setup name="Class">
 import { listClass, getClass, delClass, addClass, updateClass } from "@/api/edu/class"
 import { listCollege } from "@/api/edu/college"
+import { listMajor } from "@/api/edu/major"
 
 const { proxy } = getCurrentInstance()
 const { sys_normal_disable } = proxy.useDict('sys_normal_disable')
 
 const classList = ref([])
 const allCollegeList = ref([])
+const majorList = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
@@ -176,6 +191,9 @@ const data = reactive({
   rules: {
     collegeId: [
       { required: true, message: "所属学院不能为空", trigger: "change" }
+    ],
+    majorId: [
+      { required: true, message: "所属专业不能为空", trigger: "change" }
     ],
     className: [
       { required: true, message: "班级名称不能为空", trigger: "blur" }
@@ -205,6 +223,23 @@ function getCollegeList() {
   })
 }
 
+/** 获取专业列表 */
+function getMajorList(collegeId) {
+  if (!collegeId) {
+    majorList.value = []
+    return
+  }
+  listMajor({ pageNum: 1, pageSize: 1000, collegeId: collegeId }).then(response => {
+    majorList.value = response.rows
+  })
+}
+
+/** 学院变更时 */
+function handleCollegeChange(collegeId) {
+  form.value.majorId = null
+  getMajorList(collegeId)
+}
+
 // 取消按钮
 function cancel() {
   open.value = false
@@ -216,6 +251,7 @@ function reset() {
   form.value = {
     classId: null,
     collegeId: null,
+    majorId: null,
     className: null,
     grade: null,
     enrollmentYear: null,
@@ -225,6 +261,7 @@ function reset() {
     sortOrder: 0,
     status: "0"
   }
+  majorList.value = []
   proxy.resetForm("classRef")
 }
 
@@ -262,6 +299,10 @@ function handleUpdate(row) {
   const _classId = row.classId || ids.value
   getClass(_classId).then(response => {
     form.value = response.data
+    // 如果有学院ID,加载对应的专业列表
+    if (form.value.collegeId) {
+      getMajorList(form.value.collegeId)
+    }
     open.value = true
     title.value = "修改班级信息"
   })

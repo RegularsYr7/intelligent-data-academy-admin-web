@@ -190,7 +190,8 @@
           </el-col>
           <el-col :span="isAdmin ? 12 : 24">
             <el-form-item label="所属学院" prop="collegeId">
-              <el-select v-model="form.collegeId" placeholder="请选择学院" clearable style="width: 100%">
+              <el-select v-model="form.collegeId" placeholder="请选择学院" clearable style="width: 100%"
+                @clear="handleClearCollege">
                 <el-option v-for="college in formCollegeOptions" :key="college.collegeId" :label="college.collegeName"
                   :value="college.collegeId" />
               </el-select>
@@ -523,6 +524,11 @@ function handleFormSchoolChange(schoolId) {
   loadFormCollegeOptions(schoolId)
 }
 
+/** 清空学院选择 */
+function handleClearCollege() {
+  form.value.collegeId = undefined
+}
+
 /** 过滤禁用的部门 */
 function filterDisabledDept(deptList) {
   return deptList.filter(dept => {
@@ -758,14 +764,37 @@ function submitForm() {
         form.value.schoolId = currentSchoolId.value
       }
 
+      // 构建提交数据,只保留必要字段
+      const submitData = {
+        userId: form.value.userId,
+        deptId: form.value.deptId,
+        userName: form.value.userName,
+        nickName: form.value.nickName,
+        phonenumber: form.value.phonenumber,
+        email: form.value.email,
+        sex: form.value.sex,
+        status: form.value.status,
+        remark: form.value.remark,
+        postIds: form.value.postIds,
+        roleIds: form.value.roleIds,
+        // 始终发送学校和学院ID,即使为空也要发送null以清空数据库字段
+        schoolId: form.value.schoolId || null,
+        collegeId: form.value.collegeId || null
+      }
+
+      // 新增用户时需要密码
+      if (form.value.userId == undefined) {
+        submitData.password = form.value.password
+      }
+
       if (form.value.userId != undefined) {
-        updateUser(form.value).then(response => {
+        updateUser(submitData).then(response => {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
         })
       } else {
-        addUser(form.value).then(response => {
+        addUser(submitData).then(response => {
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()

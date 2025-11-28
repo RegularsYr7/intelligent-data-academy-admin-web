@@ -44,20 +44,34 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="semesterId" width="80" />
       <el-table-column label="学期名称" align="center" prop="semesterName" min-width="120" />
-      <el-table-column label="所属班级" align="center" prop="className" min-width="150" show-overflow-tooltip />
-      <el-table-column label="开始日期" align="center" prop="startDate" width="110" />
-      <el-table-column label="结束日期" align="center" prop="endDate" width="110" />
+      <el-table-column label="所属班级" align="center" prop="classNameList" min-width="200">
+        <template #default="scope">
+          <div v-if="scope.row.classNameList">
+            <div v-for="(className, index) in scope.row.classNameList.split(', ')" :key="index">
+              {{ className }}
+            </div>
+          </div>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="当前周次" align="center" prop="currentWeek" width="100">
+        <template #default="scope">
+          <span v-if="scope.row.currentWeek">第{{ scope.row.currentWeek }}周</span>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="总周次" align="center" prop="totalWeeks" width="100">
+        <template #default="scope">
+          <span v-if="scope.row.totalWeeks">第{{ scope.row.totalWeeks }}周</span>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="学期类型" align="center" prop="semesterType" width="100">
         <template #default="scope">
           <dict-tag :options="edu_semester_type" :value="scope.row.semesterType" />
         </template>
       </el-table-column>
-      <el-table-column label="学年" align="center" prop="academicYear" width="100" />
-      <el-table-column label="是否当前" align="center" prop="isCurrent" width="90">
-        <template #default="scope">
-          <dict-tag :options="sys_yes_no" :value="scope.row.isCurrent" />
-        </template>
-      </el-table-column>
+      <el-table-column label="学年" align="center" prop="academicYear" width="110" />
       <el-table-column label="状态" align="center" prop="status" width="80">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
@@ -88,14 +102,9 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="24">
-            <el-form-item label="所属班级" prop="classIds" v-if="!form.semesterId">
-              <el-select v-model="form.classIds" placeholder="请选择班级（可多选）" multiple filterable style="width: 100%;">
-                <el-option v-for="item in classList" :key="item.classId" :label="item.className"
-                  :value="item.classId" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="所属班级" prop="classId" v-else>
-              <el-select v-model="form.classId" placeholder="请选择班级" filterable style="width: 100%;">
+            <el-form-item label="所属班级" prop="classIds">
+              <el-select v-model="form.classIds" placeholder="请选择班级（可多选）" multiple filterable collapse-tags
+                style="width: 100%;">
                 <el-option v-for="item in classList" :key="item.classId" :label="item.className"
                   :value="item.classId" />
               </el-select>
@@ -103,17 +112,10 @@
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="18">
             <el-form-item label="开始日期" prop="startDate">
-              <el-date-picker v-model="form.startDate" type="date" value-format="YYYY-MM-DD" placeholder="请选择学期开始日期"
-                style="width: 100%;">
-              </el-date-picker>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="结束日期" prop="endDate">
-              <el-date-picker v-model="form.endDate" type="date" value-format="YYYY-MM-DD" placeholder="请选择学期结束日期"
-                style="width: 100%;">
+              <el-date-picker v-model="form.startDate" type="date" value-format="YYYY-MM-DD"
+                placeholder="请选择学期开始日期（第1周第1天）" style="width: 100%;">
               </el-date-picker>
             </el-form-item>
           </el-col>
@@ -128,8 +130,24 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="学期周次" prop="totalWeeks">
+              <el-input-number v-model="form.totalWeeks" :min="1" :max="52" placeholder="请输入学期周次"
+                style="width: 100%;" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
             <el-form-item label="学年" prop="academicYear">
-              <el-input v-model="form.academicYear" placeholder="请输入学年，如：2024-2025" />
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <el-date-picker v-model="form.startYear" type="year" value-format="YYYY" placeholder="开始年份"
+                  style="flex: 1;">
+                </el-date-picker>
+                <span>-</span>
+                <el-date-picker v-model="form.endYear" type="year" value-format="YYYY" placeholder="结束年份"
+                  style="flex: 1;">
+                </el-date-picker>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -201,14 +219,17 @@ const data = reactive({
     startDate: [
       { required: true, message: "开始日期不能为空", trigger: "blur" }
     ],
-    endDate: [
-      { required: true, message: "结束日期不能为空", trigger: "blur" }
+    totalWeeks: [
+      { required: true, message: "学期周次不能为空", trigger: "blur" }
     ],
     semesterType: [
       { required: true, message: "学期类型不能为空", trigger: "change" }
     ],
-    academicYear: [
-      { required: true, message: "学年不能为空", trigger: "blur" }
+    startYear: [
+      { required: true, message: "开始年份不能为空", trigger: "change" }
+    ],
+    endYear: [
+      { required: true, message: "结束年份不能为空", trigger: "change" }
     ],
   }
 })
@@ -246,9 +267,10 @@ function reset() {
     classIds: [],
     classId: null,
     startDate: null,
-    endDate: null,
+    totalWeeks: null,
+    startYear: null,
+    endYear: null,
     semesterType: null,
-    academicYear: null,
     isCurrent: 'N',
     status: '0'
   }
@@ -289,6 +311,14 @@ function handleUpdate(row) {
   const _semesterId = row.semesterId || ids.value
   getSemester(_semesterId).then(response => {
     form.value = response.data
+    // 解析学年字段为两个年份
+    if (form.value.academicYear) {
+      const years = form.value.academicYear.split('-')
+      if (years.length === 2) {
+        form.value.startYear = years[0]
+        form.value.endYear = years[1]
+      }
+    }
     open.value = true
     title.value = "修改学期管理"
   })
@@ -298,14 +328,34 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["semesterRef"].validate(valid => {
     if (valid) {
+      // 拼接学年字段
+      if (form.value.startYear && form.value.endYear) {
+        form.value.academicYear = `${form.value.startYear}-${form.value.endYear}`
+      }
+
+      // 构建提交数据,不包含endDate
+      const submitData = {
+        semesterId: form.value.semesterId,
+        semesterName: form.value.semesterName,
+        classId: form.value.classId,
+        classIds: form.value.classIds,
+        startDate: form.value.startDate,
+        totalWeeks: form.value.totalWeeks,
+        academicYear: form.value.academicYear,
+        semesterType: form.value.semesterType,
+        isCurrent: form.value.isCurrent,
+        status: form.value.status,
+        remark: form.value.remark
+      }
+
       if (form.value.semesterId != null) {
-        updateSemester(form.value).then(response => {
+        updateSemester(submitData).then(response => {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
         })
       } else {
-        addSemester(form.value).then(response => {
+        addSemester(submitData).then(response => {
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()
