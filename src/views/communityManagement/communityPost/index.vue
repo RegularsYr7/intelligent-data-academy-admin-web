@@ -1,72 +1,35 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="140px">
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="发帖学生ID" prop="studentId">
-            <el-input v-model="queryParams.studentId" placeholder="请输入发帖学生ID" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="学生姓名" prop="studentName">
-            <el-input v-model="queryParams.studentName" placeholder="请输入学生姓名" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="标题" prop="title">
-            <el-input v-model="queryParams.title" placeholder="请输入标题" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="位置" prop="location">
-            <el-input v-model="queryParams.location" placeholder="请输入位置" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-form-item label="帖子类型" prop="postType">
-            <el-select v-model="queryParams.postType" placeholder="请选择帖子类型" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_community_post_type" :key="dict.value" :label="dict.label"
-                :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="是否推荐" prop="isRecommended">
-            <el-input v-model="queryParams.isRecommended" placeholder="请输入是否推荐" clearable @keyup.enter="handleQuery" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 100%;">
-              <el-option v-for="dict in edu_community_status" :key="dict.value" :label="dict.label"
-                :value="dict.value" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item label="创建时间">
-            <el-date-picker v-model="daterangeCreateTime" value-format="YYYY-MM-DD" type="daterange" range-separator="-"
-              start-placeholder="开始日期" end-placeholder="结束日期" style="width: 100%;"></el-date-picker>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="24" style="text-align: right;">
-          <el-form-item>
-            <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-            <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-          </el-form-item>
-        </el-col>
-      </el-row>
+    <el-form :model="queryParams" ref="queryRef" v-show="showSearch" :inline="true" label-width="68px">
+      <el-form-item label="所属学校" prop="schoolId">
+        <el-select v-model="queryParams.schoolId" placeholder="请选择所属学校" clearable filterable style="width: 200px;"
+          @change="handleSchoolChange">
+          <el-option v-for="item in schoolList" :key="item.schoolId" :label="item.schoolName" :value="item.schoolId" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="所属学院" prop="collegeId">
+        <el-select v-model="queryParams.collegeId" placeholder="请选择所属学院" clearable filterable style="width: 200px;">
+          <el-option v-for="item in collegeList" :key="item.collegeId" :label="item.collegeName"
+            :value="item.collegeId" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="帖子标题" prop="title">
+        <el-input v-model="queryParams.title" placeholder="请输入帖子标题" clearable style="width: 200px;"
+          @keyup.enter="handleQuery" />
+      </el-form-item>
+      <el-form-item label="帖子类型" prop="postType">
+        <el-select v-model="queryParams.postType" placeholder="请选择帖子类型" clearable style="width: 200px;">
+          <el-option v-for="dict in edu_community_post_type" :key="dict.value" :label="dict.label"
+            :value="dict.value" />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+      </el-form-item>
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button type="primary" plain icon="Plus" @click="handleAdd"
-          v-hasPermi="['edu:communityPost:add']">新增</el-button>
-      </el-col>
       <el-col :span="1.5">
         <el-button type="success" plain icon="Edit" :disabled="single" @click="handleUpdate"
           v-hasPermi="['edu:communityPost:edit']">修改</el-button>
@@ -75,10 +38,6 @@
         <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete"
           v-hasPermi="['edu:communityPost:remove']">删除</el-button>
       </el-col>
-      <el-col :span="1.5">
-        <el-button type="warning" plain icon="Download" @click="handleExport"
-          v-hasPermi="['edu:communityPost:export']">导出</el-button>
-      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -86,14 +45,18 @@
       <el-table-column type="selection" width="55" align="center" fixed />
       <el-table-column label="标题" align="center" prop="title" min-width="150" show-overflow-tooltip />
       <el-table-column label="发帖学生" align="center" prop="studentName" min-width="100" show-overflow-tooltip />
+      <el-table-column label="社区昵称" align="center" prop="studentCommunityName" min-width="120" show-overflow-tooltip />
       <el-table-column label="帖子类型" align="center" prop="postType" width="100">
         <template #default="scope">
           <dict-tag :options="edu_community_post_type" :value="scope.row.postType" />
         </template>
       </el-table-column>
-      <el-table-column label="互动数" align="center" prop="likeCount" width="120">
+      <el-table-column label="互动数" align="center" prop="likeCount" width="140">
         <template #default="scope">
-          <span>👍{{ scope.row.likeCount }} 💬{{ scope.row.commentCount }}</span>
+          <div style="display: flex; justify-content: center; gap: 10px;">
+            <span title="点赞数">👍 {{ scope.row.likeCount }}</span>
+            <span title="评论数">💬 {{ scope.row.commentCount }}</span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="状态" align="center" prop="status" width="80">
@@ -101,25 +64,22 @@
           <dict-tag :options="edu_community_status" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="是否推荐" align="center" prop="isRecommended" width="90">
-        <template #default="scope">
-          <dict-tag :options="sys_yes_no" :value="scope.row.isRecommended" />
-        </template>
-      </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="110">
         <template #default="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="帖子信息" align="center" width="200" fixed="right">
+      <el-table-column label="帖子信息" align="center" width="180" fixed="right">
         <template #default="scope">
           <el-button link type="success" @click="showCommentDetail(scope.row.postId)">评论</el-button>
           <el-button link type="success" @click="showLikeDetail(scope.row.postId)">点赞</el-button>
           <el-button link type="success" @click="showCollectDetail(scope.row.postId)">收藏</el-button>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="150" fixed="right">
+      <el-table-column label="操作" align="center" width="230" fixed="right">
         <template #default="scope">
+          <el-button link type="warning" icon="Top" @click="handleTop(scope.row)"
+            v-hasPermi="['edu:communityPost:edit']">{{ scope.row.isTop === '1' ? '取消置顶' : '置顶' }}</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['edu:communityPost:edit']">修改</el-button>
           <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)"
@@ -133,7 +93,7 @@
 
     <!-- 添加或修改社区帖子对话框 -->
     <el-dialog :title="title" v-model="open" width="1000px" append-to-body>
-      <el-form ref="communityPostRef" :model="form" :rules="rules" label-width="140px">
+      <el-form ref="communityPostRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="发帖学生ID" prop="studentId">
@@ -164,21 +124,16 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="是否推荐" prop="isRecommended">
-              <el-input v-model="form.isRecommended" placeholder="请输入是否推荐" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态" prop="status">
-              <el-select v-model="form.status" placeholder="请选择状态" style="width: 100%">
-                <el-option v-for="dict in edu_community_status" :key="dict.value" :label="dict.label"
+            <el-form-item label="标签" prop="tags">
+              <el-select v-model="selectedTags" multiple placeholder="请选择标签" style="width: 100%">
+                <el-option v-for="dict in edu_community_tag" :key="dict.value" :label="dict.label"
                   :value="dict.value"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="24">
             <el-form-item label="学生头像" prop="studentAvatar">
-              <image-upload v-model="form.studentAvatar" />
+              <image-upload v-model="form.studentAvatar" :limit="1" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -188,12 +143,7 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="展示图片" prop="images">
-              <el-input v-model="form.images" type="textarea" placeholder="请输入内容" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="标签" prop="tags">
-              <el-input v-model="form.tags" type="textarea" placeholder="请输入内容" />
+              <image-upload v-model="imageUrlList" :limit="9" />
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -292,13 +242,15 @@
 </template>
 
 <script setup name="CommunityPost">
-import { listCommunityPost, getCommunityPost, delCommunityPost, addCommunityPost, updateCommunityPost } from "@/api/edu/communityPost"
+import { listCommunityPost, getCommunityPost, delCommunityPost, addCommunityPost, updateCommunityPost, topCommunityPost } from "@/api/edu/communityPost"
 import { listCommunityComment, delCommunityComment } from "@/api/edu/communityComment"
 import { listCommunityLike, delCommunityLike } from "@/api/edu/communityLike"
 import { listCommunityCollect, delCommunityCollect } from "@/api/edu/communityCollect"
+import { listSchool } from "@/api/edu/school"
+import { listCollege } from "@/api/edu/college"
 
 const { proxy } = getCurrentInstance()
-const { edu_community_status, edu_community_post_type, edu_community_target_type } = proxy.useDict('edu_community_status', 'edu_community_post_type', 'edu_community_target_type')
+const { edu_community_status, edu_community_post_type, edu_community_target_type, edu_community_tag } = proxy.useDict('edu_community_status', 'edu_community_post_type', 'edu_community_target_type', 'edu_community_tag')
 
 const communityPostList = ref([])
 const open = ref(false)
@@ -310,6 +262,10 @@ const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
 const daterangeCreateTime = ref([])
+const schoolList = ref([])
+const collegeList = ref([])
+const selectedTags = ref([])
+const imageUrlList = ref([])
 
 // 评论详情相关
 const commentDialogVisible = ref(false)
@@ -351,15 +307,10 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
-    studentId: null,
-    studentName: null,
+    schoolId: null,
+    collegeId: null,
     title: null,
-    tags: null,
-    location: null,
     postType: null,
-    isRecommended: null,
-    status: null,
-    createTime: null,
   },
   rules: {
     studentId: [
@@ -379,14 +330,32 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+/** 查询学校列表 */
+function getSchoolList() {
+  listSchool({ pageNum: 1, pageSize: 10000 }).then(response => {
+    schoolList.value = response.rows
+  })
+}
+
+/** 学校变更事件 */
+function handleSchoolChange(schoolId) {
+  queryParams.value.collegeId = null
+  collegeList.value = []
+  if (schoolId) {
+    getCollegeList(schoolId)
+  }
+}
+
+/** 查询学院列表 */
+function getCollegeList(schoolId) {
+  listCollege({ pageNum: 1, pageSize: 10000, schoolId: schoolId }).then(response => {
+    collegeList.value = response.rows
+  })
+}
+
 /** 查询社区帖子列表 */
 function getList() {
   loading.value = true
-  queryParams.value.params = {}
-  if (null != daterangeCreateTime && '' != daterangeCreateTime) {
-    queryParams.value.params["beginCreateTime"] = daterangeCreateTime.value[0]
-    queryParams.value.params["endCreateTime"] = daterangeCreateTime.value[1]
-  }
   listCommunityPost(queryParams.value).then(response => {
     communityPostList.value = response.rows
     total.value = response.total
@@ -438,7 +407,7 @@ function handleQuery() {
 
 /** 重置按钮操作 */
 function resetQuery() {
-  daterangeCreateTime.value = []
+  collegeList.value = []
   proxy.resetForm("queryRef")
   handleQuery()
 }
@@ -463,6 +432,18 @@ function handleUpdate(row) {
   const _postId = row.postId || ids.value
   getCommunityPost(_postId).then(response => {
     form.value = response.data
+    // 处理标签：逗号分割转数组
+    if (form.value.tags) {
+      selectedTags.value = form.value.tags.split(',').filter(tag => tag.trim())
+    } else {
+      selectedTags.value = []
+    }
+    // 处理图片：逗号分割转数组
+    if (form.value.images) {
+      imageUrlList.value = form.value.images.split(',').filter(img => img.trim())
+    } else {
+      imageUrlList.value = []
+    }
     open.value = true
     title.value = "修改社区帖子"
   })
@@ -472,6 +453,11 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["communityPostRef"].validate(valid => {
     if (valid) {
+      // 处理标签：数组转逗号拼接
+      form.value.tags = selectedTags.value.join(',')
+      // 处理图片：数组转逗号拼接
+      form.value.images = imageUrlList.value.join(',')
+
       if (form.value.postId != null) {
         updateCommunityPost(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功")
@@ -500,11 +486,16 @@ function handleDelete(row) {
   }).catch(() => { })
 }
 
-/** 导出按钮操作 */
-function handleExport() {
-  proxy.download('edu/communityPost/export', {
-    ...queryParams.value
-  }, `communityPost_${new Date().getTime()}.xlsx`)
+/** 置顶按钮操作 */
+function handleTop(row) {
+  const isTop = row.isTop === '1' ? '0' : '1'
+  const tipText = isTop === '1' ? '置顶' : '取消置顶'
+  proxy.$modal.confirm('是否确认' + tipText + '该帖子？').then(function () {
+    return topCommunityPost(row.postId, isTop)
+  }).then(() => {
+    getList()
+    proxy.$modal.msgSuccess(tipText + "成功")
+  }).catch(() => { })
 }
 
 /** 查看评论详情 */
@@ -592,5 +583,7 @@ function handleDeleteCollect(row) {
   }).catch(() => { })
 }
 
+// 初始化
+getSchoolList()
 getList()
 </script>

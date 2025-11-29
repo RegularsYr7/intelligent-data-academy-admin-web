@@ -59,8 +59,6 @@
       <el-table-column label="所属学校" align="center" prop="schoolName" min-width="120" />
       <el-table-column label="学院名称" align="center" prop="collegeName" min-width="120" />
       <el-table-column label="院长名称" align="center" prop="deanName" width="120" />
-      <el-table-column label="学院简介" align="center" prop="introduction" min-width="200" show-overflow-tooltip />
-      <el-table-column label="显示顺序" align="center" prop="sortOrder" width="100" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
@@ -98,20 +96,6 @@
           <el-col :span="24">
             <el-form-item label="院长名称" prop="deanName">
               <el-input v-model="form.deanName" placeholder="请输入院长名称" clearable />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="学院简介" prop="introduction">
-              <el-input v-model="form.introduction" type="textarea" :rows="4" placeholder="请输入学院简介" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="显示顺序" prop="sortOrder">
-              <el-input-number v-model="form.sortOrder" :min="0" controls-position="right" style="width: 100%;" />
             </el-form-item>
           </el-col>
         </el-row>

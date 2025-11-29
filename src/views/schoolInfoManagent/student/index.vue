@@ -156,6 +156,11 @@
             <el-input v-model="queryParams.grade" placeholder="请输入年级" clearable @keyup.enter="handleQuery" />
           </el-form-item>
         </el-col>
+        <el-col :span="6">
+          <el-form-item label="社区昵称" prop="communityName">
+            <el-input v-model="queryParams.communityName" placeholder="请输入社区昵称" clearable @keyup.enter="handleQuery" />
+          </el-form-item>
+        </el-col>
       </el-row>
       <el-row :gutter="20">
         <el-col :span="24">
@@ -218,6 +223,7 @@
       <el-table-column label="手机号" align="center" prop="phoneCode" min-width="120" show-overflow-tooltip />
       <el-table-column label="身份证号" align="center" prop="idCard" min-width="180" show-overflow-tooltip />
       <el-table-column label="年级" align="center" prop="grade" min-width="100" show-overflow-tooltip />
+      <el-table-column label="社区昵称" align="center" prop="communityName" min-width="120" show-overflow-tooltip />
       <el-table-column label="量化分" align="center" prop="quantitativeScore" min-width="100">
         <template #default="scope">
           <span style="color: #409EFF; font-weight: bold;">{{ scope.row.quantitativeScore || 0 }}</span>
@@ -233,6 +239,11 @@
       <el-table-column label="状态" align="center" prop="status" min-width="80">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
+        </template>
+      </el-table-column>
+      <el-table-column label="粉丝" align="center" width="120" fixed="right">
+        <template #default="scope">
+          <el-button link type="success" icon="User" @click="handleViewFans(scope.row)">粉丝列表</el-button>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="240" fixed="right">
@@ -528,6 +539,11 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="社区昵称" prop="communityName">
+              <el-input v-model="form.communityName" placeholder="请输入社区昵称（用户在社区中的显示名称）" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="form.status">
                 <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
@@ -541,6 +557,72 @@
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
           <el-button @click="cancel">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 粉丝列表对话框 -->
+    <el-dialog title="粉丝列表" v-model="fansDialogVisible" width="1200px" append-to-body>
+      <div class="fans-header">
+        <el-descriptions :column="3" border>
+          <el-descriptions-item label="学号">{{ currentStudent.studentNo }}</el-descriptions-item>
+          <el-descriptions-item label="姓名">{{ currentStudent.studentName }}</el-descriptions-item>
+          <el-descriptions-item label="粉丝总数">
+            <span style="color: #409EFF; font-weight: bold; font-size: 16px;">{{ fansTotal }}</span>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+
+      <el-divider />
+
+      <!-- 粉丝列表搜索表单 -->
+      <el-form :model="fansQueryParams" ref="fansQueryRef" :inline="true" label-width="100px" style="margin-top: 20px;">
+        <el-form-item label="粉丝姓名" prop="followerName">
+          <el-input v-model="fansQueryParams.followerName" placeholder="请输入粉丝姓名" clearable style="width: 200px;"
+            @keyup.enter="handleFansQuery" />
+        </el-form-item>
+        <el-form-item label="关注时间">
+          <el-date-picker v-model="fansDateRange" value-format="YYYY-MM-DD" type="daterange" range-separator="-"
+            start-placeholder="开始日期" end-placeholder="结束日期" style="width: 240px;"></el-date-picker>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="Search" @click="handleFansQuery">搜索</el-button>
+          <el-button icon="Refresh" @click="resetFansQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+
+      <!-- 粉丝列表 -->
+      <el-table v-loading="fansLoading" :data="fansList" style="margin-top: 10px;">
+        <el-table-column label="关注ID" align="center" prop="followId" width="90" />
+        <el-table-column label="粉丝ID" align="center" prop="followerId" width="90" />
+        <el-table-column label="粉丝姓名" align="center" prop="followerName" min-width="120" show-overflow-tooltip />
+        <el-table-column label="粉丝头像" align="center" prop="followerAvatar" width="80">
+          <template #default="scope">
+            <el-image v-if="scope.row.followerAvatar" :src="scope.row.followerAvatar"
+              :preview-src-list="[scope.row.followerAvatar]" fit="cover"
+              style="width: 40px; height: 40px; border-radius: 50%;" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="关注时间" align="center" prop="createTime" width="110">
+          <template #default="scope">
+            <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" align="center" width="100" fixed="right">
+          <template #default="scope">
+            <el-button link type="danger" icon="Delete" @click="handleDeleteFans(scope.row)"
+              v-hasPermi="['edu:communityFollow:remove']">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <pagination v-show="fansTotal > 0" :total="fansTotal" v-model:page="fansQueryParams.pageNum"
+        v-model:limit="fansQueryParams.pageSize" @pagination="getFansList" />
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="fansDialogVisible = false">关 闭</el-button>
         </div>
       </template>
     </el-dialog>
@@ -583,6 +665,7 @@ import { listCollege } from "@/api/edu/college";
 import { listMajor } from "@/api/edu/major";
 import { listClass } from "@/api/edu/class";
 import { listQuantitative } from "@/api/edu/quantitative";
+import { listCommunityFollow, delCommunityFollow } from "@/api/edu/communityFollow";
 import { getToken } from "@/utils/auth";
 
 const { proxy } = getCurrentInstance()
@@ -622,6 +705,20 @@ const quantitativeQueryParams = reactive({
   recordTime: null,
 })
 
+// 粉丝列表相关
+const fansDialogVisible = ref(false)
+const fansLoading = ref(false)
+const fansList = ref([])
+const fansTotal = ref(0)
+const fansDateRange = ref([])
+const fansQueryParams = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  followeeId: null,
+  followerName: null,
+  createTime: null,
+})
+
 // 学生信息导入参数
 const upload = reactive({
   // 是否显示弹出层（学生信息导入）
@@ -659,6 +756,7 @@ const data = reactive({
     classId: null,
     grade: null,
     educationLevel: null,
+    communityName: null,
     status: null,
     createTime: null,
   },
@@ -822,6 +920,7 @@ function reset() {
     quantitativeScore: null,
     activityCount: null,
     organizationCount: null,
+    communityName: null,
     status: null,
     delFlag: null,
     createBy: null,
@@ -975,6 +1074,59 @@ function handleExportQuantitative() {
     `${currentStudent.value.studentName}_量化记录_${new Date().getTime()}.xlsx`)
 }
 
+/** 查看学生粉丝列表 */
+function handleViewFans(row) {
+  currentStudent.value = { ...row }
+  fansQueryParams.followeeId = row.studentId
+  fansQueryParams.pageNum = 1
+  fansDialogVisible.value = true
+  getFansList()
+}
+
+/** 查询粉丝列表 */
+function getFansList() {
+  fansLoading.value = true
+  const params = { ...fansQueryParams }
+  params.params = {}
+
+  if (fansDateRange.value && fansDateRange.value.length === 2) {
+    params.params["beginCreateTime"] = fansDateRange.value[0]
+    params.params["endCreateTime"] = fansDateRange.value[1]
+  }
+
+  listCommunityFollow(params).then(response => {
+    fansList.value = response.rows
+    fansTotal.value = response.total
+    fansLoading.value = false
+  }).catch(() => {
+    fansLoading.value = false
+  })
+}
+
+/** 搜索粉丝列表 */
+function handleFansQuery() {
+  fansQueryParams.pageNum = 1
+  getFansList()
+}
+
+/** 重置粉丝列表查询 */
+function resetFansQuery() {
+  fansDateRange.value = []
+  fansQueryParams.followerName = null
+  fansQueryParams.pageNum = 1
+  getFansList()
+}
+
+/** 删除粉丝 */
+function handleDeleteFans(row) {
+  proxy.$modal.confirm('是否确认删除该粉丝关注记录？').then(function () {
+    return delCommunityFollow(row.followId)
+  }).then(() => {
+    getFansList()
+    proxy.$modal.msgSuccess("删除成功")
+  }).catch(() => { })
+}
+
 /** 查询学校列表 */
 function getSchoolList() {
   listSchool().then(response => {
@@ -1065,6 +1217,15 @@ getList()
       font-weight: bold;
       background-color: #f5f7fa;
     }
+  }
+}
+
+.fans-header {
+  margin-bottom: 10px;
+
+  :deep(.el-descriptions__label) {
+    font-weight: bold;
+    background-color: #f5f7fa;
   }
 }
 

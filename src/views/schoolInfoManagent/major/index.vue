@@ -1,12 +1,22 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="80px">
-      <el-row :gutter="10">
+      <el-row :gutter="20">
+        <el-col :span="6">
+          <el-form-item label="所属学校" prop="schoolId">
+            <el-select v-model="queryParams.schoolId" placeholder="请选择所属学校" clearable filterable
+              @change="handleQuerySchoolChange" style="width: 100%;">
+              <el-option v-for="item in schoolList" :key="item.schoolId" :label="item.schoolName"
+                :value="item.schoolId" />
+            </el-select>
+          </el-form-item>
+        </el-col>
         <el-col :span="6">
           <el-form-item label="所属学院" prop="collegeId">
-            <el-select v-model="queryParams.collegeId" placeholder="请选择学院" clearable filterable style="width: 100%;">
-              <el-option v-for="college in queryCollegeList" :key="college.collegeId" :label="college.collegeName"
-                :value="college.collegeId"></el-option>
+            <el-select v-model="queryParams.collegeId" :placeholder="queryParams.schoolId ? '请选择学院' : '请先选择学校'"
+              :disabled="!queryParams.schoolId" clearable filterable style="width: 100%;">
+              <el-option v-for="college in queryFilteredCollegeList" :key="college.collegeId"
+                :label="college.collegeName" :value="college.collegeId"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -42,13 +52,11 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="majorId" width="80" />
       <el-table-column label="所属学校" align="center" prop="schoolName" width="140" />
-      <el-table-column label="所属学院" align="center" prop="collegeName" width="140" />
+      <el-table-column label="所属学院" align="center" prop="collegeName" width="220" />
       <el-table-column label="专业名称" align="center" prop="majorName" min-width="120" />
       <el-table-column label="学制年限" align="center" prop="educationYears" width="100" />
       <el-table-column label="授予学位" align="center" prop="degreeName" width="120" />
       <el-table-column label="学费" align="center" prop="tuitionFee" width="100" />
-      <el-table-column label="就业方向" align="center" prop="careerDirection" min-width="150" show-overflow-tooltip />
-      <el-table-column label="专业简介" align="center" prop="introduction" min-width="200" show-overflow-tooltip />
       <el-table-column label="状态" align="center" prop="status" width="80">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
@@ -71,11 +79,21 @@
     <el-dialog :title="title" v-model="open" width="800px" append-to-body>
       <el-form ref="majorRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
-          <el-col :span="24">
+          <el-col :span="12">
+            <el-form-item label="所属学校" prop="schoolId">
+              <el-select v-model="form.schoolId" placeholder="请选择所属学校" clearable filterable
+                @change="handleFormSchoolChange" style="width: 100%;">
+                <el-option v-for="item in schoolList" :key="item.schoolId" :label="item.schoolName"
+                  :value="item.schoolId" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="所属学院" prop="collegeId">
-              <el-select v-model="form.collegeId" placeholder="请选择所属学院" clearable filterable style="width: 100%;">
-                <el-option v-for="college in collegeList" :key="college.collegeId" :label="college.collegeName"
-                  :value="college.collegeId"></el-option>
+              <el-select v-model="form.collegeId" :placeholder="form.schoolId ? '请选择所属学院' : '请先选择学校'"
+                :disabled="!form.schoolId" clearable filterable style="width: 100%;">
+                <el-option v-for="college in formFilteredCollegeList" :key="college.collegeId"
+                  :label="college.collegeName" :value="college.collegeId"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -109,30 +127,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="就业方向" prop="careerDirection">
-              <el-input v-model="form.careerDirection" type="textarea" :rows="3" placeholder="请输入就业方向" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="专业简介" prop="introduction">
-              <el-input v-model="form.introduction" type="textarea" :rows="4" placeholder="请输入专业简介" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="状态" prop="status">
-              <el-radio-group v-model="form.status">
-                <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label
-                }}</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -159,6 +153,8 @@ const schoolList = ref([])
 const collegeList = ref([])
 const allCollegeList = ref([])
 const queryCollegeList = ref([])
+const queryFilteredCollegeList = ref([])
+const formFilteredCollegeList = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
@@ -176,9 +172,13 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
+    schoolId: null,
     collegeId: null,
   },
   rules: {
+    schoolId: [
+      { required: true, message: "所属学校不能为空", trigger: "change" }
+    ],
     collegeId: [
       { required: true, message: "所属学院不能为空", trigger: "change" }
     ],
@@ -193,12 +193,8 @@ const { queryParams, form, rules } = toRefs(data)
 /** 查询专业信息列表 */
 function getList() {
   loading.value = true
-  // 自动添加学校ID到查询参数
-  const params = {
-    ...queryParams.value,
-    schoolId: currentSchoolId.value
-  }
-  listMajor(params).then(response => {
+  // 使用搜索栏的查询参数
+  listMajor(queryParams.value).then(response => {
     majorList.value = response.rows
     total.value = response.total
     loading.value = false
@@ -214,17 +210,43 @@ function getSchoolList() {
 
 /** 获取学院列表 */
 function getCollegeList() {
-  // 只获取当前学校的学院
+  // 获取所有学院用于层级选择
   const params = {
     pageNum: 1,
-    pageSize: 1000,
-    schoolId: currentSchoolId.value
+    pageSize: 1000
   }
   listCollege(params).then(response => {
     allCollegeList.value = response.rows
     collegeList.value = response.rows
     queryCollegeList.value = response.rows
+    // 初始化筛选列表
+    queryFilteredCollegeList.value = response.rows
+    formFilteredCollegeList.value = response.rows
   })
+}
+
+/** 搜索栏-学校变化时处理 */
+function handleQuerySchoolChange(schoolId) {
+  // 清空学院选择
+  queryParams.value.collegeId = null
+  // 根据学校ID筛选学院列表
+  if (schoolId) {
+    queryFilteredCollegeList.value = allCollegeList.value.filter(college => college.schoolId === schoolId)
+  } else {
+    queryFilteredCollegeList.value = allCollegeList.value
+  }
+}
+
+/** 表单-学校变化时处理 */
+function handleFormSchoolChange(schoolId) {
+  // 清空学院选择
+  form.value.collegeId = null
+  // 根据学校ID筛选学院列表
+  if (schoolId) {
+    formFilteredCollegeList.value = allCollegeList.value.filter(college => college.schoolId === schoolId)
+  } else {
+    formFilteredCollegeList.value = allCollegeList.value
+  }
 }
 
 // 取消按钮
@@ -237,7 +259,7 @@ function cancel() {
 function reset() {
   form.value = {
     majorId: null,
-    schoolId: currentSchoolId.value, // 自动填充当前用户的学校ID
+    schoolId: null,
     collegeId: null,
     majorName: null,
     educationYears: 4,
@@ -247,6 +269,8 @@ function reset() {
     introduction: null,
     status: "0"
   }
+  // 重置筛选列表
+  formFilteredCollegeList.value = allCollegeList.value
   proxy.resetForm("majorRef")
 }
 
@@ -258,6 +282,9 @@ function handleQuery() {
 
 /** 重置按钮操作 */
 function resetQuery() {
+  queryParams.value.schoolId = null
+  queryParams.value.collegeId = null
+  queryFilteredCollegeList.value = allCollegeList.value
   proxy.resetForm("queryRef")
   handleQuery()
 }
@@ -282,8 +309,10 @@ function handleUpdate(row) {
   const _majorId = row.majorId || ids.value
   getMajor(_majorId).then(response => {
     form.value = response.data
-    // 确保学校ID是当前用户的学校ID
-    form.value.schoolId = currentSchoolId.value
+    // 根据学校ID筛选学院列表
+    if (form.value.schoolId) {
+      formFilteredCollegeList.value = allCollegeList.value.filter(college => college.schoolId === form.value.schoolId)
+    }
     open.value = true
     title.value = "修改专业信息"
   })
@@ -293,8 +322,7 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["majorRef"].validate(valid => {
     if (valid) {
-      // 确保提交时包含学校ID
-      form.value.schoolId = currentSchoolId.value
+      // schoolId已通过表单层级选择获得，无需额外处理
 
       if (form.value.majorId != null) {
         updateMajor(form.value).then(response => {

@@ -42,3 +42,12 @@ export function delCommunityPost(postId) {
     method: 'delete'
   })
 }
+
+// 置顶社区帖子
+export function topCommunityPost(postId, isTop) {
+  return request({
+    url: '/edu/communityPost/top/' + postId,
+    method: 'put',
+    params: { isTop }
+  })
+}

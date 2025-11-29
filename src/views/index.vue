@@ -19,85 +19,28 @@
     </el-row>
 
     <!-- 数据统计卡片 -->
-    <el-row :gutter="20" class="statistics-section">
-      <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
-        <el-card shadow="hover" class="stat-card stat-card-primary">
+    <el-row :gutter="20" class="statistics-section" v-if="visibleStatistics.length > 0">
+      <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6" v-for="stat in visibleStatistics" :key="stat.key">
+        <el-card shadow="hover" class="stat-card" :class="stat.colorClass">
           <div class="stat-content">
             <div class="stat-icon">
               <el-icon :size="40">
-                <User />
+                <component :is="stat.icon" />
               </el-icon>
             </div>
             <div class="stat-info">
-              <p class="stat-label">学生总数</p>
-              <h3 class="stat-value">{{ statistics.studentCount }}</h3>
-              <span class="stat-trend up">
+              <p class="stat-label">{{ stat.label }}</p>
+              <h3 class="stat-value">{{ stat.value }}</h3>
+              <span class="stat-trend" :class="{ up: stat.trend > 0, down: stat.trend < 0 }" v-if="stat.trend !== 0">
                 <el-icon>
-                  <CaretTop />
-                </el-icon> 12%
+                  <CaretTop v-if="stat.trend > 0" />
+                  <CaretBottom v-else />
+                </el-icon> {{ Math.abs(stat.trend) }}%
               </span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
-        <el-card shadow="hover" class="stat-card stat-card-success">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="40">
-                <DocumentChecked />
-              </el-icon>
-            </div>
-            <div class="stat-info">
-              <p class="stat-label">活动总数</p>
-              <h3 class="stat-value">{{ statistics.activityCount }}</h3>
-              <span class="stat-trend up">
-                <el-icon>
-                  <CaretTop />
-                </el-icon> 8%
-              </span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
-        <el-card shadow="hover" class="stat-card stat-card-warning">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="40">
-                <School />
-              </el-icon>
-            </div>
-            <div class="stat-info">
-              <p class="stat-label">组织数量</p>
-              <h3 class="stat-value">{{ statistics.organizationCount }}</h3>
-              <span class="stat-trend">
+              <span class="stat-trend" v-else>
                 <el-icon>
                   <Minus />
                 </el-icon> 0%
-              </span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="6">
-        <el-card shadow="hover" class="stat-card stat-card-danger">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="40">
-                <Trophy />
-              </el-icon>
-            </div>
-            <div class="stat-info">
-              <p class="stat-label">竞赛数量</p>
-              <h3 class="stat-value">{{ statistics.competitionCount }}</h3>
-              <span class="stat-trend up">
-                <el-icon>
-                  <CaretTop />
-                </el-icon> 15%
               </span>
             </div>
           </div>
@@ -116,7 +59,7 @@
                 </el-icon> 快捷入口</span>
             </div>
           </template>
-          <el-row :gutter="15">
+          <el-row :gutter="15" v-if="quickLinks.length > 0">
             <el-col :xs="12" :sm="8" :md="6" :lg="4" :xl="3" v-for="item in quickLinks" :key="item.path">
               <div class="quick-item" @click="handleQuickNav(item.path)">
                 <div class="quick-icon" :style="{ background: item.color }">
@@ -128,122 +71,7 @@
               </div>
             </el-col>
           </el-row>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 数据图表与动态 -->
-    <el-row :gutter="20" class="chart-section">
-      <!-- 活动趋势图 -->
-      <el-col :xs="24" :sm="24" :md="16" :lg="16" :xl="16">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span><el-icon>
-                  <TrendCharts />
-                </el-icon> 活动参与趋势</span>
-              <el-radio-group v-model="chartPeriod" size="small">
-                <el-radio-button label="week">本周</el-radio-button>
-                <el-radio-button label="month">本月</el-radio-button>
-                <el-radio-button label="year">本年</el-radio-button>
-              </el-radio-group>
-            </div>
-          </template>
-          <div id="activityChart" style="height: 300px;"></div>
-        </el-card>
-      </el-col>
-
-      <!-- 最新动态 -->
-      <el-col :xs="24" :sm="24" :md="8" :lg="8" :xl="8">
-        <el-card shadow="hover" class="notice-card">
-          <template #header>
-            <div class="card-header">
-              <span><el-icon>
-                  <Bell />
-                </el-icon> 最新动态</span>
-            </div>
-          </template>
-          <el-scrollbar height="300px">
-            <div class="notice-list">
-              <div class="notice-item" v-for="(item, index) in notices" :key="index">
-                <div class="notice-dot" :class="item.type"></div>
-                <div class="notice-content">
-                  <p class="notice-title">{{ item.title }}</p>
-                  <p class="notice-time">{{ item.time }}</p>
-                </div>
-              </div>
-            </div>
-          </el-scrollbar>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 待办事项与系统信息 -->
-    <el-row :gutter="20" class="bottom-section">
-      <!-- 待办事项 -->
-      <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span><el-icon>
-                  <List />
-                </el-icon> 待办事项</span>
-              <el-tag size="small" type="danger">{{ todoList.length }}</el-tag>
-            </div>
-          </template>
-          <el-table :data="todoList" stripe style="width: 100%" max-height="250">
-            <el-table-column prop="title" label="事项" show-overflow-tooltip />
-            <el-table-column prop="priority" label="优先级" width="80" align="center">
-              <template #default="scope">
-                <el-tag :type="getPriorityType(scope.row.priority)" size="small">
-                  {{ scope.row.priority }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="deadline" label="截止时间" width="110" align="center" />
-            <el-table-column label="操作" width="80" align="center">
-              <template #default="scope">
-                <el-button link type="primary" size="small" @click="handleTodo(scope.row)">
-                  处理
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-col>
-
-      <!-- 系统信息 -->
-      <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span><el-icon>
-                  <Monitor />
-                </el-icon> 系统信息</span>
-            </div>
-          </template>
-          <div class="system-info">
-            <div class="info-item">
-              <span class="info-label">系统名称：</span>
-              <span class="info-value">智能化数据学院管理系统</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">系统版本：</span>
-              <span class="info-value">v2.0.0</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">当前角色：</span>
-              <span class="info-value">{{ userInfo.roles?.join(', ') }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">登录时间：</span>
-              <span class="info-value">{{ loginTime }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">上次登录：</span>
-              <span class="info-value">{{ lastLoginTime }}</span>
-            </div>
-          </div>
+          <el-empty v-else description="暂无可用的快捷入口" :image-size="80" />
         </el-card>
       </el-col>
     </el-row>
@@ -251,9 +79,13 @@
 </template>
 
 <script setup name="Index">
-import { User, DocumentChecked, School, Trophy, Fold, TrendCharts, Bell, List, Monitor, CaretTop, Minus } from '@element-plus/icons-vue'
+import { Fold, CaretTop, CaretBottom, Minus } from '@element-plus/icons-vue'
 import useUserStore from '@/store/modules/user'
 import * as echarts from 'echarts'
+import { listStudent } from '@/api/edu/student'
+import { listActivity } from '@/api/edu/activity'
+import { listOrganization } from '@/api/edu/organization'
+import { listCompetition } from '@/api/edu/competition'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -284,50 +116,149 @@ const welcomeMessage = computed(() => {
   return '夜深了,早点休息'
 })
 
-// 统计数据
-const statistics = reactive({
-  studentCount: 1248,
-  activityCount: 156,
-  organizationCount: 28,
-  competitionCount: 45
+// 定义统计数据的响应式对象
+const statisticsData = reactive({
+  studentCount: 0,
+  activityCount: 0,
+  organizationCount: 0,
+  competitionCount: 0
+})
+
+// 统计数据配置（包含权限要求）
+const allStatistics = computed(() => [
+  {
+    key: 'studentCount',
+    label: '学生总数',
+    value: statisticsData.studentCount,
+    trend: 12,
+    icon: 'User',
+    colorClass: 'stat-card-primary',
+    permission: 'edu:student:list'
+  },
+  {
+    key: 'activityCount',
+    label: '活动总数',
+    value: statisticsData.activityCount,
+    trend: 8,
+    icon: 'DocumentChecked',
+    colorClass: 'stat-card-success',
+    permission: 'edu:activity:list'
+  },
+  {
+    key: 'organizationCount',
+    label: '组织数量',
+    value: statisticsData.organizationCount,
+    trend: 0,
+    icon: 'School',
+    colorClass: 'stat-card-warning',
+    permission: 'edu:organization:list'
+  },
+  {
+    key: 'competitionCount',
+    label: '竞赛数量',
+    value: statisticsData.competitionCount,
+    trend: 15,
+    icon: 'Trophy',
+    colorClass: 'stat-card-danger',
+    permission: 'edu:competitionInfo:list'
+  }
+])
+
+// 根据权限过滤统计卡片
+const visibleStatistics = computed(() => {
+  const all_permission = "*:*:*"
+  const permissions = userStore.permissions
+
+  return allStatistics.value.filter(stat => {
+    if (!stat.permission) return true
+    if (permissions.includes(all_permission)) return true
+    return permissions.some(p => p === stat.permission)
+  })
 })
 
 // 图表周期
 const chartPeriod = ref('month')
 
-// 快捷入口
-const quickLinks = ref([
-  { label: '学生管理', path: '/schoolInfoManagent/student/index', icon: 'User', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { label: '班级管理', path: '/schoolInfoManagent/class/index', icon: 'School', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
-  { label: '活动管理', path: '/activityManagent/activity/index', icon: 'DocumentChecked', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-  { label: '竞赛管理', path: '/competitionManagent/competitionInfo/index', icon: 'Trophy', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
-  { label: '组织管理', path: '/organizationalManagement/organization/index', icon: 'OfficeBuilding', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
-  { label: '考勤任务', path: '/attendanceManagement/task/index', icon: 'Calendar', color: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)' },
-  { label: '量化分数', path: '/quantitative/index', icon: 'DataLine', color: 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)' },
-  { label: '失物招领', path: '/lostFoundManagement/found/index', icon: 'Search', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' },
-  { label: '社区帖子', path: '/communityManagement/communityPost/index', icon: 'ChatDotRound', color: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)' },
-  { label: '风采展示', path: '/styleManagement/styleInfo/index', icon: 'Picture', color: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)' },
-  { label: '地图坐标', path: '/mapManagent/coordinates/index', icon: 'Location', color: 'linear-gradient(135deg, #ffd89b 0%, #19547b 100%)' },
-  { label: '反馈建议', path: '/feedback/index', icon: 'ChatLineSquare', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }
-])
+// 所有快捷入口配置（包含权限要求）- 按功能类型分组排序
+const allQuickLinks = [
+  // 基础信息管理
+  { label: '学生管理', path: '/schoolInfoManagent/student/index', icon: 'User', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', permission: 'edu:student:list' },
+  { label: '班级管理', path: '/schoolInfoManagent/class/index', icon: 'School', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', permission: 'edu:class:list' },
 
-// 最新动态
-const notices = ref([
-  { type: 'success', title: '新学期活动报名开始', time: '2小时前' },
-  { type: 'warning', title: '学生信息需要更新', time: '5小时前' },
-  { type: 'info', title: '竞赛报名截止提醒', time: '1天前' },
-  { type: 'danger', title: '系统维护通知', time: '2天前' },
-  { type: 'success', title: '风采展示已发布', time: '3天前' },
-  { type: 'info', title: '量化分数已更新', time: '3天前' }
-])
+  // 组织与活动
+  { label: '组织管理', path: '/organizationalManagement/organization/index', icon: 'OfficeBuilding', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', permission: 'edu:organization:list' },
+  { label: '活动管理', path: '/activityManagent/activity/index', icon: 'DocumentChecked', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', permission: 'edu:activity:list' },
+  { label: '竞赛管理', path: '/competitionManagent/competitionInfo/index', icon: 'Trophy', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', permission: 'edu:competitionInfo:list' },
 
-// 待办事项
-const todoList = ref([
-  { title: '审核学生活动申请', priority: '高', deadline: '今天' },
-  { title: '更新竞赛信息', priority: '中', deadline: '明天' },
-  { title: '处理反馈建议', priority: '低', deadline: '本周' },
-  { title: '组织会议安排', priority: '高', deadline: '明天' }
-])
+  // 日常管理
+  { label: '考勤任务', path: '/attendanceManagement/task/index', icon: 'Calendar', color: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)', permission: 'edu:task:list' },
+  { label: '失物招领', path: '/lostFoundManagement/found/index', icon: 'Search', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', permission: 'edu:found:list' },
+
+  // 社区互动
+  { label: '社区帖子', path: '/communityManagement/communityPost', icon: 'ChatDotRound', color: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', permission: 'edu:communityPost:list' },
+  { label: '风采展示', path: '/styleManagement/styleInfo/index', icon: 'Picture', color: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', permission: 'edu:showcase:list' },
+
+  // 其他功能
+  { label: '地图坐标', path: '/mapManagent/coordinates/index', icon: 'Location', color: 'linear-gradient(135deg, #ffd89b 0%, #19547b 100%)', permission: 'edu:coordinates:list' },
+  { label: '反馈建议', path: '/feedback/index', icon: 'ChatLineSquare', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', permission: 'edu:feedback:list' }
+]
+
+// 根据权限过滤快捷入口
+const quickLinks = computed(() => {
+  const all_permission = "*:*:*"
+  const permissions = userStore.permissions
+
+  return allQuickLinks.filter(link => {
+    // 如果没有配置权限要求，则显示
+    if (!link.permission) return true
+    // 如果用户有超级管理员权限，则显示所有
+    if (permissions.includes(all_permission)) return true
+    // 检查用户是否有该功能的权限
+    return permissions.some(p => p === link.permission)
+  })
+})
+
+// 所有动态配置（包含权限要求）
+const allNotices = [
+  { type: 'success', title: '新学期活动报名开始', time: '2小时前', permission: 'edu:activity:list' },
+  { type: 'warning', title: '学生信息需要更新', time: '5小时前', permission: 'edu:student:list' },
+  { type: 'info', title: '竞赛报名截止提醒', time: '1天前', permission: 'edu:competitionInfo:list' },
+  { type: 'danger', title: '系统维护通知', time: '2天前', permission: null }, // 所有人可见
+  { type: 'success', title: '风采展示已发布', time: '3天前', permission: 'edu:showcase:list' },
+  { type: 'info', title: '量化分数已更新', time: '3天前', permission: 'edu:quantitative:list' }
+]
+
+// 根据权限过滤动态
+const notices = computed(() => {
+  const all_permission = "*:*:*"
+  const permissions = userStore.permissions
+
+  return allNotices.filter(notice => {
+    if (!notice.permission) return true
+    if (permissions.includes(all_permission)) return true
+    return permissions.some(p => p === notice.permission)
+  })
+})
+
+// 所有待办事项配置（包含权限要求）
+const allTodoList = [
+  { title: '审核学生活动申请', priority: '高', deadline: '今天', permission: 'edu:activity:edit' },
+  { title: '更新竞赛信息', priority: '中', deadline: '明天', permission: 'edu:competitionInfo:edit' },
+  { title: '处理反馈建议', priority: '低', deadline: '本周', permission: 'edu:feedback:edit' },
+  { title: '组织会议安排', priority: '高', deadline: '明天', permission: 'edu:organization:edit' }
+]
+
+// 根据权限过滤待办事项
+const todoList = computed(() => {
+  const all_permission = "*:*:*"
+  const permissions = userStore.permissions
+
+  return allTodoList.filter(todo => {
+    if (!todo.permission) return true
+    if (permissions.includes(all_permission)) return true
+    return permissions.some(p => p === todo.permission)
+  })
+})
 
 // 更新时间
 function updateTime() {
@@ -425,6 +356,28 @@ function getPriorityType(priority) {
   return types[priority] || 'info'
 }
 
+// 获取统计数据
+async function fetchStatistics() {
+  try {
+    // 并行调用所有接口，每个只请求1条数据以获取总数
+    const [studentRes, activityRes, organizationRes, competitionRes] = await Promise.all([
+      listStudent({ pageNum: 1, pageSize: 1 }),
+      listActivity({ pageNum: 1, pageSize: 1 }),
+      listOrganization({ pageNum: 1, pageSize: 1 }),
+      listCompetition({ pageNum: 1, pageSize: 1 })
+    ])
+
+    // 更新统计数据
+    statisticsData.studentCount = studentRes.total || 0
+    statisticsData.activityCount = activityRes.total || 0
+    statisticsData.organizationCount = organizationRes.total || 0
+    statisticsData.competitionCount = competitionRes.total || 0
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+    proxy.$modal.msgError('获取统计数据失败')
+  }
+}
+
 onMounted(() => {
   // 更新时间
   updateTime()
@@ -433,6 +386,9 @@ onMounted(() => {
   // 设置登录时间
   loginTime.value = new Date().toLocaleString('zh-CN')
   lastLoginTime.value = '2025-01-02 09:30:25'
+
+  // 获取统计数据
+  fetchStatistics()
 
   // 初始化图表
   nextTick(() => {
@@ -726,6 +682,11 @@ watch(chartPeriod, () => {
   flex: 1;
   color: #303133;
   font-size: 14px;
+}
+
+// 空状态
+::v-deep(.el-empty) {
+  padding: 30px 0;
 }
 
 // 响应式
