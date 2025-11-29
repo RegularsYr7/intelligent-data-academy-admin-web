@@ -10,7 +10,7 @@ export default defineConfig(({ mode, command }) => {
   // 根据环境变量设置后端API地址
   const baseUrl =
     VITE_APP_ENV === "production"
-      ? "https://intelligentmini.rainyweb.cn"
+      ? "https://intelligentadmin.rainyweb.cn"
       : "http://localhost:8080";
 
   return {
