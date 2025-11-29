@@ -144,9 +144,18 @@
             </el-table-column>
             <el-table-column label="操作" align="center" width="150" fixed="right">
                 <template #default="scope">
-                    <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
+                    <el-tooltip v-if="scope.row.activityStatus === '5' || scope.row.activityStatus === '6'"
+                        content="活动已结束或已完结，无法修改" placement="top">
+                        <el-button link type="info" icon="Edit" disabled>修改</el-button>
+                    </el-tooltip>
+                    <el-button v-else link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
                         v-hasPermi="['edu:activity:edit']">修改</el-button>
-                    <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)"
+
+                    <el-tooltip v-if="scope.row.activityStatus === '5' || scope.row.activityStatus === '6'"
+                        content="活动已结束或已完结，无法删除" placement="top">
+                        <el-button link type="info" icon="Delete" disabled>删除</el-button>
+                    </el-tooltip>
+                    <el-button v-else link type="danger" icon="Delete" @click="handleDelete(scope.row)"
                         v-hasPermi="['edu:activity:remove']">删除</el-button>
                 </template>
             </el-table-column>
@@ -204,10 +213,22 @@
                     <el-col :span="12">
                         <el-form-item label="所属组织" prop="organizationId">
                             <el-select v-model="form.organizationId" placeholder="请选择所属组织" clearable filterable
-                                style="width: 100%;">
+                                @change="handleOrganizationChange" style="width: 100%;">
                                 <el-option v-for="org in formOrganizationList" :key="org.organizationId"
                                     :label="org.organizationName" :value="org.organizationId"></el-option>
                             </el-select>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row :gutter="20">
+                    <el-col :span="24">
+                        <el-form-item label="活动负责人" prop="leaderIds">
+                            <el-input v-model="form.leaderNames" placeholder="点击右侧按钮选择负责人" readonly>
+                                <template #append>
+                                    <el-button icon="User" @click="showLeaderDialog = true"
+                                        :disabled="!form.organizationId">选择负责人</el-button>
+                                </template>
+                            </el-input>
                         </el-form-item>
                     </el-col>
                 </el-row>
@@ -279,7 +300,7 @@
                         <el-form-item label="是否支持请假" prop="allowLeave">
                             <el-radio-group v-model="form.allowLeave">
                                 <el-radio v-for="dict in sys_yes_no" :key="dict.value" :label="dict.value">{{ dict.label
-                                    }}</el-radio>
+                                }}</el-radio>
                             </el-radio-group>
                         </el-form-item>
                     </el-col>
@@ -352,7 +373,7 @@
                             <el-radio-group v-model="form.status">
                                 <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{
                                     dict.label
-                                    }}</el-radio>
+                                }}</el-radio>
                             </el-radio-group>
                         </el-form-item>
                     </el-col>
@@ -421,6 +442,51 @@
             </template>
         </el-dialog>
 
+        <!-- 负责人选择对话框 -->
+        <el-dialog title="选择活动负责人" v-model="showLeaderDialog" width="800px" append-to-body>
+            <div style="margin-bottom: 15px;">
+                <el-input v-model="leaderSearchKeyword" placeholder="搜索成员姓名或学号" clearable @input="filterLeaderList">
+                    <template #prefix>
+                        <el-icon>
+                            <Search />
+                        </el-icon>
+                    </template>
+                </el-input>
+            </div>
+            <el-table ref="leaderTableRef" :data="filteredLeaderList" @selection-change="handleLeaderSelectionChange"
+                max-height="400" v-loading="leaderLoading">
+                <el-table-column type="selection" width="55" align="center" />
+                <el-table-column label="姓名" align="center" prop="studentName" min-width="100" show-overflow-tooltip />
+                <el-table-column label="学号" align="center" prop="studentNo" min-width="120" show-overflow-tooltip />
+                <el-table-column label="角色" align="center" prop="role" width="100">
+                    <template #default="scope">
+                        <el-tag v-if="scope.row.role === '1'" type="danger">会长</el-tag>
+                        <el-tag v-else-if="scope.row.role === '2'" type="warning">副会长</el-tag>
+                        <el-tag v-else-if="scope.row.role === '3'" type="success">干事</el-tag>
+                        <el-tag v-else type="info">成员</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="加入时间" align="center" prop="joinTime" width="110">
+                    <template #default="scope">
+                        <span>{{ parseTime(scope.row.joinTime, '{y}-{m}-{d}') }}</span>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <div v-if="selectedLeaders.length > 0" style="margin-top: 15px;">
+                <el-text>已选择 {{ selectedLeaders.length }} 人：</el-text>
+                <el-tag v-for="leader in selectedLeaders" :key="leader.studentId" closable @close="removeLeader(leader)"
+                    style="margin: 5px;">
+                    {{ leader.studentName }}
+                </el-tag>
+            </div>
+            <template #footer>
+                <div class="dialog-footer">
+                    <el-button type="primary" @click="confirmLeaders">确 定</el-button>
+                    <el-button @click="showLeaderDialog = false">取 消</el-button>
+                </div>
+            </template>
+        </el-dialog>
+
         <!-- 参与记录详情对话框 -->
         <el-dialog title="参与记录详情" v-model="participantDialogVisible" width="1400px" append-to-body>
             <el-table v-loading="participantLoading" :data="participantList" max-height="500">
@@ -467,6 +533,7 @@ import { listActivity, getActivity, delActivity, addActivity, updateActivity } f
 import { listParticipant, delParticipant } from "@/api/edu/participant"
 import { listSchool } from "@/api/edu/school"
 import { listOrganization } from "@/api/edu/organization"
+import { listMember } from "@/api/edu/member"
 import { listCollege } from "@/api/edu/college"
 import { listClass } from "@/api/edu/class"
 import { loadAMap } from "@/utils/amap"
@@ -516,6 +583,15 @@ const DEFAULT_LOCATION = {
 
 // 标签相关
 const showTagDialog = ref(false)
+
+// 负责人相关
+const showLeaderDialog = ref(false)
+const leaderLoading = ref(false)
+const leaderList = ref([])
+const filteredLeaderList = ref([])
+const selectedLeaders = ref([])
+const leaderSearchKeyword = ref("")
+const leaderTableRef = ref()
 const newTag = ref("")
 const currentTags = ref([])
 const commonTags = ref([
@@ -693,6 +769,85 @@ function handleParticipateScopeChange(scope) {
     }
 }
 
+/** 组织改变 */
+async function handleOrganizationChange(organizationId) {
+    // 清空之前选择的负责人
+    form.value.leaderIds = null
+    form.value.leaderNames = null
+    selectedLeaders.value = []
+
+    // 如果选择了组织，预加载成员列表
+    if (organizationId) {
+        await loadOrganizationMembers(organizationId)
+    }
+}
+
+/** 加载组织成员列表 */
+async function loadOrganizationMembers(organizationId) {
+    try {
+        leaderLoading.value = true
+        const response = await listMember({
+            organizationId: organizationId,
+            pageNum: 1,
+            pageSize: 1000 // 获取所有成员
+        })
+        leaderList.value = response.rows || []
+        filteredLeaderList.value = leaderList.value
+    } catch (error) {
+        console.error('加载组织成员失败:', error)
+        proxy.$modal.msgError('加载组织成员失败')
+    } finally {
+        leaderLoading.value = false
+    }
+}
+
+/** 筛选负责人列表 */
+function filterLeaderList() {
+    const keyword = leaderSearchKeyword.value.trim().toLowerCase()
+    if (!keyword) {
+        filteredLeaderList.value = leaderList.value
+    } else {
+        filteredLeaderList.value = leaderList.value.filter(member => {
+            const name = (member.studentName || '').toLowerCase()
+            const no = (member.studentNo || '').toLowerCase()
+            return name.includes(keyword) || no.includes(keyword)
+        })
+    }
+}
+
+/** 负责人选择变化 */
+function handleLeaderSelectionChange(selection) {
+    selectedLeaders.value = selection
+}
+
+/** 移除负责人 */
+function removeLeader(leader) {
+    const index = selectedLeaders.value.findIndex(l => l.studentId === leader.studentId)
+    if (index > -1) {
+        selectedLeaders.value.splice(index, 1)
+        // 更新表格选中状态
+        leaderTableRef.value.toggleRowSelection(leader, false)
+    }
+}
+
+/** 确认选择负责人 */
+function confirmLeaders() {
+    if (selectedLeaders.value.length === 0) {
+        proxy.$modal.msgWarning('请至少选择一位负责人')
+        return
+    }
+
+    // 提取学生ID和姓名
+    const leaderIds = selectedLeaders.value.map(l => l.studentId).join(',')
+    const leaderNames = selectedLeaders.value.map(l => l.studentName).join(',')
+
+    form.value.leaderIds = leaderIds
+    form.value.leaderNames = leaderNames
+
+    showLeaderDialog.value = false
+    proxy.$modal.msgSuccess('已选择 ' + selectedLeaders.value.length + ' 位负责人')
+}
+
 // 取消按钮
 function cancel() {
     open.value = false
@@ -768,8 +923,14 @@ function resetQuery() {
 // 多选框选中数据
 function handleSelectionChange(selection) {
     ids.value = selection.map(item => item.activityId)
-    single.value = selection.length != 1
-    multiple.value = !selection.length
+
+    // 检查是否有已结束或已完结的活动
+    const hasFinished = selection.some(item =>
+        item.activityStatus === '5' || item.activityStatus === '6'
+    )
+
+    single.value = selection.length != 1 || hasFinished
+    multiple.value = !selection.length || hasFinished
 }
 
 /** 新增按钮操作 */
@@ -785,6 +946,12 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
+    // 检查活动状态
+    if (row && (row.activityStatus === '5' || row.activityStatus === '6')) {
+        proxy.$modal.msgWarning('活动已结束或已完结，无法修改')
+        return
+    }
+
     reset()
     const _activityId = row.activityId || ids.value
 
@@ -848,6 +1015,12 @@ function submitForm() {
 
 /** 删除按钮操作 */
 function handleDelete(row) {
+    // 检查活动状态
+    if (row && (row.activityStatus === '5' || row.activityStatus === '6')) {
+        proxy.$modal.msgWarning('活动已结束或已完结，无法删除')
+        return
+    }
+
     const _activityIds = row.activityId || ids.value
     proxy.$modal.confirm('是否确认删除活动信息编号为"' + _activityIds + '"的数据项？').then(function () {
         return delActivity(_activityIds)
@@ -1046,6 +1219,38 @@ function confirmTags() {
 watch(showTagDialog, (newVal) => {
     if (newVal) {
         currentTags.value = form.value.activityTags ? form.value.activityTags.split(',') : []
+    }
+})
+
+/** 打开负责人对话框时初始化 */
+watch(showLeaderDialog, async (newVal) => {
+    if (newVal) {
+        // 如果还没有加载成员列表，先加载
+        if (form.value.organizationId && leaderList.value.length === 0) {
+            await loadOrganizationMembers(form.value.organizationId)
+        }
+
+        // 恢复之前选择的负责人
+        leaderSearchKeyword.value = ''
+        filteredLeaderList.value = leaderList.value
+
+        if (form.value.leaderIds) {
+            const leaderIdArray = form.value.leaderIds.split(',').map(id => parseInt(id))
+            selectedLeaders.value = leaderList.value.filter(member =>
+                leaderIdArray.includes(member.studentId)
+            )
+
+            // 设置表格选中状态
+            nextTick(() => {
+                if (leaderTableRef.value) {
+                    selectedLeaders.value.forEach(leader => {
+                        leaderTableRef.value.toggleRowSelection(leader, true)
+                    })
+                }
+            })
+        } else {
+            selectedLeaders.value = []
+        }
     }
 })
 

@@ -54,7 +54,6 @@
       <el-table-column label="所属学院" align="center" prop="collegeName" min-width="120" />
       <el-table-column label="所属专业" align="center" prop="majorName" min-width="150" show-overflow-tooltip />
       <el-table-column label="班级名称" align="center" prop="className" min-width="120" />
-      <el-table-column label="班级年级" align="center" prop="grade" width="100" />
       <el-table-column label="入学年份" align="center" prop="enrollmentYear" width="100" />
       <el-table-column label="辅导员姓名" align="center" width="120">
         <template #default="scope">
@@ -64,7 +63,6 @@
           <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column label="班级简介" align="center" prop="description" min-width="200" show-overflow-tooltip />
       <el-table-column label="状态" align="center" prop="status" width="80">
         <template #default="scope">
           <dict-tag :options="sys_normal_disable" :value="scope.row.status" />

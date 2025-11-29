@@ -360,6 +360,7 @@ function handleExport() {
 }
 
 // 初始化
-getList()
+getSchoolList()
 getCollegeList()
+getList()
 </script>
