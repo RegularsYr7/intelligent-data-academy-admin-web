@@ -80,7 +80,8 @@ const emit = defineEmits()
 const number = ref(0)
 const uploadList = ref([])
 const baseUrl = import.meta.env.VITE_APP_BASE_API
-const uploadFileUrl = ref(import.meta.env.VITE_APP_BASE_API + props.action) // 上传文件服务器地址
+// 始终使用线上接口，确保文件上传到线上服务器
+const uploadFileUrl = ref('https://intelligentadmin.rainyweb.cn' + props.action)
 const headers = ref({ Authorization: "Bearer " + getToken() })
 const fileList = ref([])
 const showTip = computed(

@@ -151,11 +151,7 @@
                     <el-button v-else link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
                         v-hasPermi="['edu:activity:edit']">修改</el-button>
 
-                    <el-tooltip v-if="scope.row.activityStatus === '5' || scope.row.activityStatus === '6'"
-                        content="活动已结束或已完结，无法删除" placement="top">
-                        <el-button link type="info" icon="Delete" disabled>删除</el-button>
-                    </el-tooltip>
-                    <el-button v-else link type="danger" icon="Delete" @click="handleDelete(scope.row)"
+                    <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)"
                         v-hasPermi="['edu:activity:remove']">删除</el-button>
                 </template>
             </el-table-column>
@@ -923,14 +919,8 @@ function resetQuery() {
 // 多选框选中数据
 function handleSelectionChange(selection) {
     ids.value = selection.map(item => item.activityId)
-
-    // 检查是否有已结束或已完结的活动
-    const hasFinished = selection.some(item =>
-        item.activityStatus === '5' || item.activityStatus === '6'
-    )
-
-    single.value = selection.length != 1 || hasFinished
-    multiple.value = !selection.length || hasFinished
+    single.value = selection.length != 1
+    multiple.value = !selection.length
 }
 
 /** 新增按钮操作 */
@@ -946,12 +936,6 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
-    // 检查活动状态
-    if (row && (row.activityStatus === '5' || row.activityStatus === '6')) {
-        proxy.$modal.msgWarning('活动已结束或已完结，无法修改')
-        return
-    }
-
     reset()
     const _activityId = row.activityId || ids.value
 
@@ -1015,12 +999,6 @@ function submitForm() {
 
 /** 删除按钮操作 */
 function handleDelete(row) {
-    // 检查活动状态
-    if (row && (row.activityStatus === '5' || row.activityStatus === '6')) {
-        proxy.$modal.msgWarning('活动已结束或已完结，无法删除')
-        return
-    }
-
     const _activityIds = row.activityId || ids.value
     proxy.$modal.confirm('是否确认删除活动信息编号为"' + _activityIds + '"的数据项？').then(function () {
         return delActivity(_activityIds)

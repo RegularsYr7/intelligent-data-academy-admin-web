@@ -82,7 +82,8 @@ const uploadList = ref([])
 const dialogImageUrl = ref("")
 const dialogVisible = ref(false)
 const baseUrl = import.meta.env.VITE_APP_BASE_API
-const uploadImgUrl = ref(import.meta.env.VITE_APP_BASE_API + props.action) // 上传的图片服务器地址
+// 始终使用线上接口，确保图片上传到线上服务器
+const uploadImgUrl = ref('https://intelligentadmin.rainyweb.cn' + props.action)
 const headers = ref({ Authorization: "Bearer " + getToken() })
 const fileList = ref([])
 const showTip = computed(
