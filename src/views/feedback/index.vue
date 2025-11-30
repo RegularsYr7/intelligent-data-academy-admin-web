@@ -74,10 +74,6 @@
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
-        <el-button type="success" plain icon="Edit" :disabled="single" @click="handleUpdate"
-          v-hasPermi="['edu:feedback:edit']">修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
         <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete"
           v-hasPermi="['edu:feedback:remove']">删除</el-button>
       </el-col>
@@ -98,17 +94,23 @@
         </template>
       </el-table-column>
       <el-table-column label="提交学生" align="center" prop="studentName" min-width="100" show-overflow-tooltip />
+      <el-table-column label="所属学院" align="center" prop="collegeName" min-width="120" show-overflow-tooltip />
+      <el-table-column label="所属学校" align="center" prop="schoolName" min-width="120" show-overflow-tooltip />
       <el-table-column label="处理人" align="center" prop="currentHandlerName" min-width="100" show-overflow-tooltip />
       <el-table-column label="提交时间" align="center" prop="submitTime" width="110">
         <template #default="scope">
           <span>{{ parseTime(scope.row.submitTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="150" fixed="right">
+      <el-table-column label="操作" align="center" width="350" fixed="right">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
-            v-hasPermi="['edu:feedback:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)"
+          <el-button link type="primary" icon="View" @click="handleViewReplies(scope.row)"
+            v-hasPermi="['edu:feedback:query']">查看回复</el-button>
+          <el-button link type="success" icon="ChatDotRound" @click="handleReplyDialog(scope.row)"
+            v-hasPermi="['edu:feedback:reply']">回复</el-button>
+          <el-button link type="primary" icon="View" @click="handleView(scope.row)"
+            v-hasPermi="['edu:feedback:query']">查看</el-button>
+          <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)"
             v-hasPermi="['edu:feedback:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -117,14 +119,13 @@
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum"
       v-model:limit="queryParams.pageSize" @pagination="getList" />
 
-    <!-- 查看/修改反馈信息对话框 -->
+    <!-- 查看反馈信息对话框 -->
     <el-dialog :title="title" v-model="open" width="900px" append-to-body>
       <el-form ref="feedbackRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="所属学校" prop="schoolId">
-              <el-select v-model="form.schoolId" placeholder="请选择所属学校" clearable filterable disabled
-                style="width: 100%;">
+              <el-select v-model="form.schoolId" placeholder="请选择所属学校" disabled style="width: 100%;">
                 <el-option v-for="item in schoolList" :key="item.schoolId" :label="item.schoolName"
                   :value="item.schoolId" />
               </el-select>
@@ -139,14 +140,14 @@
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="标题" prop="title">
-              <el-input v-model="form.title" placeholder="请输入标题" :readonly="!isEditing" />
+              <el-input v-model="form.title" placeholder="标题" readonly />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="反馈类型" prop="feedbackType">
-              <el-select v-model="form.feedbackType" placeholder="请选择反馈类型" :disabled="!isEditing" style="width: 100%">
+              <el-select v-model="form.feedbackType" placeholder="反馈类型" disabled style="width: 100%">
                 <el-option v-for="dict in edu_feedback_type" :key="dict.value" :label="dict.label"
                   :value="dict.value"></el-option>
               </el-select>
@@ -154,7 +155,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="联系方式" prop="contactInfo">
-              <el-input v-model="form.contactInfo" placeholder="请输入联系方式" :readonly="!isEditing" />
+              <el-input v-model="form.contactInfo" placeholder="联系方式" readonly />
             </el-form-item>
           </el-col>
         </el-row>
@@ -171,17 +172,21 @@
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="24">
-            <el-form-item label="详细描述" prop="description">
-              <el-input v-model="form.description" type="textarea" :rows="4" placeholder="请输入详细描述"
-                :readonly="!isEditing" />
+          <el-col :span="12">
+            <el-form-item label="所属学院" prop="collegeName">
+              <el-input v-model="form.collegeName" placeholder="所属学院" readonly />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="所属学校" prop="schoolName">
+              <el-input v-model="form.schoolName" placeholder="所属学校" readonly />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="24">
-            <el-form-item label="反馈图片" prop="imageUrl">
-              <image-upload v-model="form.imageUrl" :disabled="!isEditing" />
+            <el-form-item label="详细描述" prop="description">
+              <el-input v-model="form.description" type="textarea" :rows="4" placeholder="详细描述" readonly />
             </el-form-item>
           </el-col>
         </el-row>
@@ -199,15 +204,77 @@
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="备注" prop="remark">
-              <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
+              <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="备注" readonly />
             </el-form-item>
           </el-col>
         </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm" v-if="isEditing">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="cancel">关 闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 查看回复列表对话框 -->
+    <el-dialog title="回复列表" v-model="replyListDialogVisible" width="700px" append-to-body>
+      <div v-if="replyHistoryList.length === 0" style="text-align: center; padding: 40px 0; color: #909399;">
+        <el-icon size="48" style="margin-bottom: 16px;">
+          <ChatLineSquare />
+        </el-icon>
+        <div>暂无回复记录</div>
+      </div>
+      <el-timeline v-else>
+        <el-timeline-item v-for="(reply, index) in replyHistoryList" :key="index" :timestamp="reply.replyTime"
+          placement="top" :color="reply.type === 'reply' ? '#409EFF' : '#67C23A'">
+          <el-card shadow="hover">
+            <template #header>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold;">{{ reply.replyBy || '管理员' }}</span>
+                <el-tag :type="reply.type === 'reply' ? 'primary' : 'success'" size="small">
+                  {{ reply.type === 'reply' ? '回复' : '补充' }}
+                </el-tag>
+              </div>
+            </template>
+            <div style="white-space: pre-wrap; line-height: 1.8; color: #606266;">{{ reply.content }}</div>
+          </el-card>
+        </el-timeline-item>
+      </el-timeline>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="replyListDialogVisible = false">关 闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 添加回复对话框 -->
+    <el-dialog title="添加回复" v-model="replyDialogVisible" width="600px" append-to-body>
+      <div style="margin-bottom: 16px;">
+        <div style="font-weight: 500; margin-bottom: 8px; color: #606266;">反馈标题</div>
+        <div style="padding: 12px; background-color: #f5f7fa; border-radius: 4px; color: #303133;">
+          {{ currentFeedback.title }}
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <div style="font-weight: 500; margin-bottom: 8px; color: #606266;">反馈内容</div>
+        <div
+          style="padding: 12px; background-color: #f5f7fa; border-radius: 4px; color: #606266; max-height: 200px; overflow-y: auto;">
+          {{ currentFeedback.description }}
+        </div>
+      </div>
+      <el-divider />
+      <el-form :model="replyForm" ref="replyFormRef" label-width="80px">
+        <el-form-item label="回复内容" prop="content" :rules="[{ required: true, message: '请输入回复内容', trigger: 'blur' }]">
+          <el-input v-model="replyForm.content" type="textarea" :rows="6" placeholder="请输入对学生反馈的回复内容..." maxlength="500"
+            show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="replyDialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="submitReply" :disabled="!replyForm.content || !replyForm.content.trim()">
+            提交回复
+          </el-button>
         </div>
       </template>
     </el-dialog>
@@ -215,7 +282,7 @@
 </template>
 
 <script setup name="Feedback">
-import { listFeedback, getFeedback, delFeedback, addFeedback, updateFeedback } from "@/api/edu/feedback"
+import { listFeedback, getFeedback, delFeedback, addFeedback, updateFeedback, replyFeedback } from "@/api/edu/feedback"
 import { listSchool } from "@/api/edu/school"
 import { listCollege } from "@/api/edu/college"
 
@@ -238,6 +305,15 @@ const isEditing = ref(false)
 const daterangeSubmitTime = ref([])
 const daterangeFirstReplyTime = ref([])
 const daterangeResolveTime = ref([])
+
+// 回复相关
+const replyListDialogVisible = ref(false)
+const replyDialogVisible = ref(false)
+const replyHistoryList = ref([])
+const currentFeedback = ref({})
+const replyForm = reactive({
+  content: ''
+})
 
 // 计算图片列表
 const imageUrlList = computed(() => {
@@ -393,16 +469,83 @@ function handleSelectionChange(selection) {
   multiple.value = !selection.length
 }
 
-/** 查看/修改按钮操作 */
-function handleUpdate(row) {
+/** 查看按钮操作 */
+function handleView(row) {
   reset()
   const _feedbackId = row.feedbackId || ids.value
   getFeedback(_feedbackId).then(response => {
     form.value = response.data
-    isEditing.value = true
+    isEditing.value = false
     open.value = true
-    title.value = "查看反馈信息"
+    title.value = "查看反馈详情"
   })
+}
+
+/** 查看回复列表 */
+function handleViewReplies(row) {
+  currentFeedback.value = { ...row }
+  replyListDialogVisible.value = true
+
+  // 加载回复历史
+  getFeedback(row.feedbackId).then(response => {
+    loadReplyHistory(response.data.replyRecords)
+  })
+}
+
+/** 打开回复对话框 */
+function handleReplyDialog(row) {
+  currentFeedback.value = { ...row }
+  replyForm.content = ''
+
+  // 加载完整的反馈信息（包括description）
+  getFeedback(row.feedbackId).then(response => {
+    currentFeedback.value = response.data
+    replyDialogVisible.value = true
+  })
+}
+
+/** 加载回复历史记录 */
+function loadReplyHistory(replyRecords) {
+  replyHistoryList.value = []
+  if (replyRecords) {
+    try {
+      const records = JSON.parse(replyRecords)
+      replyHistoryList.value = records.map(record => {
+        // 兼容处理：管理员回复用 replyTime/replyBy，学生追加用 time/userName
+        const time = record.replyTime || record.time
+        const name = record.replyBy || record.userName || (record.type === 'reply' ? '管理员' : '学生')
+
+        return {
+          ...record,
+          replyTime: proxy.parseTime(time, '{y}-{m}-{d} {h}:{i}'),
+          replyBy: name
+        }
+      })
+    } catch (e) {
+      console.error('解析回复记录失败', e)
+    }
+  }
+}
+
+/** 提交回复 */
+function submitReply() {
+  if (!replyForm.content || !replyForm.content.trim()) {
+    proxy.$modal.msgWarning("请输入回复内容")
+    return
+  }
+
+  proxy.$modal.confirm('确认要提交回复吗？').then(() => {
+    return replyFeedback({
+      feedbackId: currentFeedback.value.feedbackId,
+      replyContent: replyForm.content.trim()
+    })
+  }).then(() => {
+    proxy.$modal.msgSuccess("回复成功")
+    replyDialogVisible.value = false
+    replyForm.content = ''
+    // 刷新列表
+    getList()
+  }).catch(() => { })
 }
 
 /** 提交按钮 */
@@ -461,5 +604,33 @@ getList()
 
 :deep(.el-descriptions) {
   margin-bottom: 20px;
+}
+
+:deep(.el-timeline) {
+  padding-left: 0;
+
+  .el-timeline-item__wrapper {
+    padding-left: 35px;
+  }
+
+  .el-timeline-item__timestamp {
+    color: #909399;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  .el-card {
+    margin-bottom: 10px;
+
+    .el-card__header {
+      padding: 12px 15px;
+      background-color: #f5f7fa;
+    }
+
+    .el-card__body {
+      padding: 15px;
+      color: #606266;
+    }
+  }
 }
 </style>

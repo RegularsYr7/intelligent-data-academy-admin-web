@@ -42,3 +42,12 @@ export function delFeedback(feedbackId) {
     method: 'delete'
   })
 }
+
+// 答复反馈
+export function replyFeedback(data) {
+  return request({
+    url: '/edu/feedback/reply',
+    method: 'post',
+    data: data
+  })
+}
