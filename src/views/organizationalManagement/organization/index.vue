@@ -558,6 +558,18 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
+
+  // 手动重置级联相关状态
+  queryParams.value.schoolId = null
+  queryParams.value.collegeId = null
+  queryParams.value.classId = null
+  queryParams.value.queryCollegeId = null
+  queryParams.value.pageNum = 1
+
+  // 重置学院和班级列表为全部
+  queryCollegeList.value = allCollegeList.value
+  queryClassList.value = allClassList.value
+
   handleQuery()
 }
 

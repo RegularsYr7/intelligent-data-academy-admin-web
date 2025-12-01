@@ -544,7 +544,22 @@ function reset() {
 // 重置查询
 function resetQuery() {
   proxy.resetForm("queryRef");
-  handleQuery();
+
+  // 手动重置级联相关状态
+  queryParams.value.schoolId = null;
+  queryParams.value.collegeId = null;
+  queryParams.value.classId = null;
+  queryParams.value.semester = null;
+  classSemesterList.value = [];
+
+  // 重置视图状态
+  searched.value = false;
+  hasData.value = false;
+  scheduleData.value = {};
+  scheduleList.value = [];
+  total.value = 0;
+  currentWeek.value = 1;
+  maxWeek.value = 20;
 }
 
 // 获取基础数据列表
@@ -592,6 +607,7 @@ function handleQuery() {
       return;
     }
     searched.value = true;
+    loading.value = true;
 
     const selectedSemester = allSemesterList.value.find(item => item.semesterName === queryParams.value.semester);
 
@@ -618,6 +634,9 @@ function handleQuery() {
       } else {
         hasData.value = false;
       }
+      loading.value = false;
+    }).catch(() => {
+      loading.value = false;
     });
   }
 }

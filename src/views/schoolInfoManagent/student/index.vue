@@ -944,6 +944,14 @@ function resetQuery() {
   daterangeGraduationDate.value = []
   daterangeBirthday.value = []
   proxy.resetForm("queryRef")
+
+  // 手动重置级联相关状态
+  queryParams.value.schoolId = null
+  queryParams.value.collegeId = null
+  queryParams.value.majorId = null
+  queryParams.value.classId = null
+  queryParams.value.pageNum = 1
+
   handleQuery()
 }
 
