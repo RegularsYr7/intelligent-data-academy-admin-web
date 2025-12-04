@@ -33,10 +33,7 @@
         </div>
       </el-form-item>
     </el-form>
-    <!--  底部  -->
-    <div class="el-login-footer">
-      <span>Copyright © 2018-2025 ruoyi.vip All Rights Reserved.</span>
-    </div>
+
   </div>
 </template>
 
@@ -140,11 +137,14 @@ getCookie()
 <style lang='scss' scoped>
 .login {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
-  height: 100%;
-  background-image: url("../assets/images/login-background.jpg");
-  background-size: cover;
+  height: 100vh;
+  background-image: url("../assets/images/inside_banner.png");
+  background-size: 100% 100%;
+  background-position: center;
+  padding-right: 10%;
+  overflow: hidden;
 }
 
 .title {
@@ -154,11 +154,12 @@ getCookie()
 }
 
 .login-form {
-  border-radius: 6px;
-  background: #ffffff;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.95);
   width: 400px;
-  padding: 25px 25px 5px 25px;
+  padding: 30px 35px 25px 35px;
   z-index: 1;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
 
   .el-input {
     height: 40px;
