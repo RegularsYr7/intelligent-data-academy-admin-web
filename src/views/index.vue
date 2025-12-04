@@ -405,7 +405,7 @@ watch(chartPeriod, () => {
 <style scoped lang="scss">
 .home {
   padding: 20px;
-  background: #f0f2f5;
+  background: var(--el-bg-color-page);
   min-height: calc(100vh - 84px);
 }
 
@@ -417,6 +417,7 @@ watch(chartPeriod, () => {
 .welcome-card {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
+  border: none;
 
   ::v-deep(.el-card__body) {
     padding: 30px;
@@ -434,18 +435,21 @@ watch(chartPeriod, () => {
     font-size: 28px;
     margin: 0 0 10px 0;
     font-weight: 600;
+    color: #fff;
   }
 
   .welcome-desc {
     font-size: 16px;
     opacity: 0.9;
     margin: 5px 0;
+    color: rgba(255, 255, 255, 0.9);
   }
 
   .current-time {
     font-size: 14px;
     opacity: 0.8;
     margin: 5px 0 0 0;
+    color: rgba(255, 255, 255, 0.8);
   }
 }
 
@@ -463,9 +467,12 @@ watch(chartPeriod, () => {
 .stat-card {
   cursor: pointer;
   transition: all 0.3s;
+  background-color: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
 
   &:hover {
     transform: translateY(-5px);
+    box-shadow: var(--el-box-shadow-light);
   }
 
   ::v-deep(.el-card__body) {
@@ -511,7 +518,7 @@ watch(chartPeriod, () => {
 
 .stat-label {
   font-size: 14px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
   margin: 0 0 8px 0;
 }
 
@@ -519,7 +526,7 @@ watch(chartPeriod, () => {
   font-size: 26px;
   font-weight: 600;
   margin: 0;
-  color: #303133;
+  color: var(--el-text-color-primary);
 }
 
 .stat-trend {
@@ -530,11 +537,11 @@ watch(chartPeriod, () => {
   margin-top: 5px;
 
   &.up {
-    color: #67c23a;
+    color: var(--el-color-success);
   }
 
   &.down {
-    color: #f56c6c;
+    color: var(--el-color-danger);
   }
 }
 
@@ -551,7 +558,7 @@ watch(chartPeriod, () => {
   border-radius: 8px;
 
   &:hover {
-    background: #f5f7fa;
+    background: var(--el-fill-color-light);
     transform: translateY(-3px);
   }
 }
@@ -569,7 +576,7 @@ watch(chartPeriod, () => {
 
 .quick-label {
   font-size: 14px;
-  color: #606266;
+  color: var(--el-text-color-regular);
   margin: 0;
 }
 
@@ -583,6 +590,7 @@ watch(chartPeriod, () => {
   justify-content: space-between;
   align-items: center;
   font-weight: 600;
+  color: var(--el-text-color-primary);
 
   span {
     display: flex;
@@ -604,7 +612,7 @@ watch(chartPeriod, () => {
   display: flex;
   align-items: flex-start;
   padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 
   &:last-child {
     border-bottom: none;
@@ -620,19 +628,19 @@ watch(chartPeriod, () => {
   flex-shrink: 0;
 
   &.success {
-    background: #67c23a;
+    background: var(--el-color-success);
   }
 
   &.warning {
-    background: #e6a23c;
+    background: var(--el-color-warning);
   }
 
   &.info {
-    background: #909399;
+    background: var(--el-color-info);
   }
 
   &.danger {
-    background: #f56c6c;
+    background: var(--el-color-danger);
   }
 }
 
@@ -642,14 +650,14 @@ watch(chartPeriod, () => {
 
 .notice-title {
   font-size: 14px;
-  color: #303133;
+  color: var(--el-text-color-primary);
   margin: 0 0 5px 0;
   line-height: 1.5;
 }
 
 .notice-time {
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
   margin: 0;
 }
 
@@ -665,7 +673,7 @@ watch(chartPeriod, () => {
 .info-item {
   display: flex;
   padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 
   &:last-child {
     border-bottom: none;
@@ -674,13 +682,13 @@ watch(chartPeriod, () => {
 
 .info-label {
   width: 100px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
   font-size: 14px;
 }
 
 .info-value {
   flex: 1;
-  color: #303133;
+  color: var(--el-text-color-primary);
   font-size: 14px;
 }
 

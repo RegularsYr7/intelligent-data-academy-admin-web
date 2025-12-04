@@ -6,15 +6,15 @@
         <h1 v-else class="sidebar-title">{{ title }}</h1>
       </router-link>
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
-        <img v-if="logo" :src="logo" class="sidebar-logo" />
-        <h1 class="sidebar-title">{{ title }}</h1>
+        <img v-if="logoBig" :src="logoBig" class="sidebar-logo-long" />
       </router-link>
     </transition>
   </div>
 </template>
 
 <script setup>
-import logo from '@/assets/logo/logo.png'
+import logo from '@/assets/logo/Logo.png'
+import logoBig from '@/assets/logo/Logo-Big.jpg'
 import useSettingsStore from '@/store/modules/settings'
 import variables from '@/assets/styles/variables.module.scss'
 
@@ -59,8 +59,8 @@ const getLogoTextColor = computed(() => {
 .sidebar-logo-container {
   position: relative;
   width: 100%;
-  height: 50px;
-  line-height: 50px;
+  height: 60px;
+  line-height: 60px;
   background: v-bind(getLogoBackground);
   text-align: center;
   overflow: hidden;
@@ -74,6 +74,15 @@ const getLogoTextColor = computed(() => {
       height: 32px;
       vertical-align: middle;
       margin-right: 12px;
+      object-fit: contain;
+    }
+
+    & .sidebar-logo-long {
+      height: 42px;
+      width: auto;
+      max-width: 180px;
+      vertical-align: middle;
+      border-radius: 6px;
     }
 
     & .sidebar-title {
