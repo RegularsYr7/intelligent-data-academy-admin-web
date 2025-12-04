@@ -51,3 +51,12 @@ export function replyFeedback(data) {
     data: data
   })
 }
+
+// 标记反馈为已解决
+export function resolveFeedback(data) {
+  return request({
+    url: '/edu/feedback/resolve',
+    method: 'post',
+    data: data
+  })
+}

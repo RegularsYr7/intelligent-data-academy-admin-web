@@ -105,16 +105,8 @@
           <dict-tag :options="edu_competition_status" :value="scope.row.competitionStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="是否发布" align="center" prop="isPublished" width="100">
-        <template #default="scope">
-          <dict-tag :options="sys_yes_no" :value="scope.row.isPublished" />
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" align="center" prop="status" width="80">
-        <template #default="scope">
-          <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
-        </template>
-      </el-table-column>
+
+
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
@@ -271,20 +263,14 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="是否发布" prop="isPublished">
+            <!-- <el-form-item label="是否发布" prop="isPublished">
               <el-radio-group v-model="form.isPublished">
                 <el-radio v-for="(dict, index) in sys_yes_no" :key="'published_' + index" :label="dict.value">{{
                   dict.label
                 }}</el-radio>
               </el-radio-group>
-            </el-form-item>
-            <el-form-item label="状态" prop="status" style="margin-top: 18px;">
-              <el-radio-group v-model="form.status">
-                <el-radio v-for="(dict, index) in sys_normal_disable" :key="'form_status_' + index"
-                  :label="dict.value">{{
-                    dict.label }}</el-radio>
-              </el-radio-group>
-            </el-form-item>
+            </el-form-item> -->
+
           </el-col>
         </el-row>
         <el-row :gutter="20" style="margin-top: 18px;">
@@ -405,12 +391,10 @@ const data = reactive({
     competitionStatus: [
       { required: true, message: "竞赛状态不能为空", trigger: "change" }
     ],
-    isPublished: [
-      { required: true, message: "是否发布不能为空", trigger: "change" }
-    ],
-    status: [
-      { required: true, message: "状态不能为空", trigger: "change" }
-    ],
+    // isPublished: [
+    //   { required: true, message: "是否发布不能为空", trigger: "change" }
+    // ],
+
   }
 })
 

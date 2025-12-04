@@ -42,3 +42,12 @@ export function delActivity(activityId) {
     method: 'delete'
   })
 }
+
+// 审核报名（批量录取）
+export function approveActivity(data) {
+  return request({
+    url: '/edu/activity/approve',
+    method: 'post',
+    data: data
+  })
+}

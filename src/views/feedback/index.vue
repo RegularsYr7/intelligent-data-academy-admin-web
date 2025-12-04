@@ -102,16 +102,18 @@
           <span>{{ parseTime(scope.row.submitTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="350" fixed="right">
+      <el-table-column label="操作" align="center" width="420" fixed="right">
         <template #default="scope">
           <el-button link type="primary" icon="View" @click="handleViewReplies(scope.row)"
             v-hasPermi="['edu:feedback:query']">查看回复</el-button>
           <el-button link type="success" icon="ChatDotRound" @click="handleReplyDialog(scope.row)"
             v-hasPermi="['edu:feedback:reply']">回复</el-button>
+          <el-button link type="warning" icon="CircleCheck" @click="handleResolve(scope.row)"
+            v-hasPermi="['edu:feedback:edit']" v-if="scope.row.feedbackStatus !== '2'">已解决</el-button>
           <el-button link type="primary" icon="View" @click="handleView(scope.row)"
             v-hasPermi="['edu:feedback:query']">查看</el-button>
-          <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)"
-            v-hasPermi="['edu:feedback:remove']">删除</el-button>
+          <!-- <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)"
+            v-hasPermi="['edu:feedback:remove']">删除</el-button> -->
         </template>
       </el-table-column>
     </el-table>
@@ -129,6 +131,11 @@
                 <el-option v-for="item in schoolList" :key="item.schoolId" :label="item.schoolName"
                   :value="item.schoolId" />
               </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="所属学院" prop="collegeName">
+              <el-input v-model="form.collegeName" placeholder="所属学院" readonly />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -168,18 +175,6 @@
           <el-col :span="12">
             <el-form-item label="学号" prop="studentNo">
               <el-input v-model="form.studentNo" placeholder="学号" readonly />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="所属学院" prop="collegeName">
-              <el-input v-model="form.collegeName" placeholder="所属学院" readonly />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="所属学校" prop="schoolName">
-              <el-input v-model="form.schoolName" placeholder="所属学校" readonly />
             </el-form-item>
           </el-col>
         </el-row>
@@ -282,7 +277,7 @@
 </template>
 
 <script setup name="Feedback">
-import { listFeedback, getFeedback, delFeedback, addFeedback, updateFeedback, replyFeedback } from "@/api/edu/feedback"
+import { listFeedback, getFeedback, delFeedback, addFeedback, updateFeedback, replyFeedback, resolveFeedback } from "@/api/edu/feedback"
 import { listSchool } from "@/api/edu/school"
 import { listCollege } from "@/api/edu/college"
 
@@ -544,6 +539,18 @@ function submitReply() {
     replyDialogVisible.value = false
     replyForm.content = ''
     // 刷新列表
+    getList()
+  }).catch(() => { })
+}
+
+/** 标记为已解决 */
+function handleResolve(row) {
+  proxy.$modal.confirm('确认要将该反馈标记为已解决吗？').then(() => {
+    return resolveFeedback({
+      feedbackId: row.feedbackId
+    })
+  }).then(() => {
+    proxy.$modal.msgSuccess("操作成功")
     getList()
   }).catch(() => { })
 }

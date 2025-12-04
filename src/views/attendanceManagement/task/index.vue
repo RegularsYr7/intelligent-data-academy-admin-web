@@ -119,7 +119,7 @@
         </template>
       </el-table-column>
       <el-table-column label="创建者" align="center" prop="creatorName" width="100" />
-      <el-table-column label="签到记录" align="center" width="100">
+      <el-table-column label="签到记录" align="center" width="100" fixed="right">
         <template #default="scope">
           <el-button link type="primary" @click="handleViewRecords(scope.row)">查看记录</el-button>
         </template>
@@ -284,7 +284,27 @@
     </el-dialog>
 
     <!-- 签到记录对话框 -->
-    <el-dialog title="签到记录" v-model="recordDialogVisible" width="1400px" append-to-body>
+    <el-dialog title="签到记录" v-model="recordDialogVisible" width="1400px" append-to-body @open="handleRecordDialogOpen">
+      <!-- 操作按钮区域 -->
+      <div style="margin-bottom: 16px;">
+        <el-space wrap>
+          <el-radio-group v-model="recordQueryParams.checkinStatus" @change="handleStatusFilterChange">
+            <el-radio-button label="all">全部</el-radio-button>
+            <el-radio-button label="checked">已签到</el-radio-button>
+            <el-radio-button label="notChecked">未签到</el-radio-button>
+          </el-radio-group>
+          <el-button type="success" icon="DocumentCopy" @click="copyCheckedInStudents">复制已签到人员信息</el-button>
+          <el-button type="success" icon="Download" @click="exportCheckedInStudents">导出已签到人员信息</el-button>
+          <el-button type="warning" icon="DocumentCopy" @click="copyNotCheckedInStudents">复制未签到人员信息</el-button>
+          <el-button type="warning" icon="Download" @click="exportNotCheckedInStudents">导出未签到人员信息</el-button>
+        </el-space>
+        <div style="margin-top: 10px; color: #606266; font-size: 14px;">
+          <span v-if="recordQueryParams.checkinStatus === 'all'">应到: {{ recordTotal }} 人</span>
+          <span v-else-if="recordQueryParams.checkinStatus === 'checked'">已签到: {{ recordTotal }} 人</span>
+          <span v-else-if="recordQueryParams.checkinStatus === 'notChecked'">未签到: {{ recordTotal }} 人</span>
+        </div>
+      </div>
+
       <el-table v-loading="recordLoading" :data="recordList" max-height="500">
         <el-table-column label="签到照片" align="center" width="100" fixed="left">
           <template #default="scope">
@@ -296,37 +316,37 @@
         </el-table-column>
         <el-table-column label="学生姓名" align="center" prop="studentName" width="100" show-overflow-tooltip />
         <el-table-column label="学号" align="center" prop="studentNo" width="140" show-overflow-tooltip />
-        <el-table-column label="班级名称" align="center" prop="className" min-width="150" show-overflow-tooltip />
+        <el-table-column label="班级名称" align="center" prop="className" min-width="350" show-overflow-tooltip />
         <el-table-column label="签到状态" align="center" width="100">
           <template #default="scope">
-            <dict-tag :options="edu_checkin_status" :value="scope.row.checkinStatus" />
+            <el-tag v-if="scope.row.recordId" type="success">已签到</el-tag>
+            <el-tag v-else type="info">未签到</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="签到时间" align="center" width="160">
           <template #default="scope">
-            <span>{{ parseTime(scope.row.checkinTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+            <span v-if="scope.row.createTime">{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+            <span v-else style="color: #999;">-</span>
           </template>
         </el-table-column>
         <el-table-column label="签到地点" align="center" prop="address" min-width="180" show-overflow-tooltip />
         <el-table-column label="经纬度" align="center" width="180">
           <template #default="scope">
-            <div style="font-size: 12px; line-height: 1.4;">
+            <div v-if="scope.row.longitude && scope.row.latitude" style="font-size: 12px; line-height: 1.4;">
               <div>{{ scope.row.longitude }}</div>
               <div>{{ scope.row.latitude }}</div>
             </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="记录时间" align="center" width="160">
-          <template #default="scope">
-            <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+            <span v-else style="color: #999;">-</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" align="center" width="80" fixed="right">
           <template #default="scope">
-            <el-button link type="primary" icon="Delete" @click="handleDeleteRecord(scope.row)">删除</el-button>
+            <el-button v-if="scope.row.recordId" link type="primary" icon="Delete"
+              @click="handleDeleteRecord(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+
       <pagination v-show="recordTotal > 0" :total="recordTotal" v-model:page="recordQueryParams.pageNum"
         v-model:limit="recordQueryParams.pageSize" @pagination="getRecordList" />
     </el-dialog>
@@ -335,7 +355,8 @@
 
 <script setup name="Task">
 import { listTask, getTask, delTask, addTask, updateTask } from "@/api/edu/task"
-import { listRecord, delRecord } from "@/api/edu/record"
+import { listRecord, delRecord, copyCheckedIn, copyNotCheckedIn } from "@/api/edu/record"
+import { listStudent } from "@/api/edu/student"
 import { listSchool } from "@/api/edu/school"
 import { listCollege } from "@/api/edu/college"
 import { listClass } from "@/api/edu/class"
@@ -369,8 +390,8 @@ const selectedLocation = ref({
 })
 
 const DEFAULT_LOCATION = {
-  longitude: 104.078814,
-  latitude: 30.663611,
+  longitude: 104.464508,
+  latitude: 30.845427,
   address: "成都文理学院"
 }
 
@@ -380,10 +401,14 @@ const recordList = ref([])
 const recordLoading = ref(false)
 const recordTotal = ref(0)
 const currentTaskId = ref(null)
+const currentTaskRow = ref(null)
+const activeRecordTab = ref('all')
+const allStudents = ref([])
 const recordQueryParams = ref({
   pageNum: 1,
-  pageSize: 10,
-  taskId: null
+  pageSize: 20,
+  taskId: null,
+  checkinStatus: 'all'
 })
 
 const data = reactive({
@@ -448,7 +473,7 @@ const formFilteredCollegeList = computed(() => {
   return collegeOptions.value.filter(item => item.schoolId === form.value.schoolId);
 });
 
-// 计算属性：表单对话框中根据学院筛选班级
+// 计算属性:表单对话框中根据学院筛选班级
 const formFilteredClassList = computed(() => {
   if (!form.value.collegeId) return [];
   return classOptions.value.filter(item => item.collegeId === form.value.collegeId);
@@ -777,20 +802,83 @@ function handleExport() {
 /** 查看签到记录 */
 function handleViewRecords(row) {
   currentTaskId.value = row.taskId
+  currentTaskRow.value = row
   recordQueryParams.value.taskId = row.taskId
   recordQueryParams.value.pageNum = 1
+  recordQueryParams.value.checkinStatus = 'all'
   recordDialogVisible.value = true
-  getRecordList()
+}
+
+/** 签到记录对话框打开时 */
+async function handleRecordDialogOpen() {
+  // 只调用全部接口
+  await getRecordList()
 }
 
 /** 查询签到记录列表 */
-function getRecordList() {
+async function getRecordList() {
   recordLoading.value = true
-  listRecord(recordQueryParams.value).then(response => {
+  try {
+    const response = await listRecord(recordQueryParams.value)
     recordList.value = response.rows
     recordTotal.value = response.total
+  } catch (error) {
+    console.error('获取签到记录失败:', error)
+  } finally {
     recordLoading.value = false
-  })
+  }
+}
+
+/** 状态筛选改变 */
+function handleStatusFilterChange() {
+  recordQueryParams.value.pageNum = 1
+  getRecordList()
+}
+
+/** 复制已签到人员信息 */
+async function copyCheckedInStudents() {
+  try {
+    const response = await copyCheckedIn(currentTaskId.value)
+    if (response.code === 200) {
+      await navigator.clipboard.writeText(response.msg)
+      proxy.$modal.msgSuccess("已签到人员信息已复制到剪贴板")
+    } else {
+      proxy.$modal.msgError(response.msg || "复制失败")
+    }
+  } catch (error) {
+    console.error('复制失败:', error)
+    proxy.$modal.msgError("复制失败")
+  }
+}
+
+/** 复制未签到人员信息 */
+async function copyNotCheckedInStudents() {
+  try {
+    const response = await copyNotCheckedIn(currentTaskId.value)
+    if (response.code === 200) {
+      await navigator.clipboard.writeText(response.msg)
+      proxy.$modal.msgSuccess("未签到人员信息已复制到剪贴板")
+    } else {
+      proxy.$modal.msgError(response.msg || "复制失败")
+    }
+  } catch (error) {
+    console.error('复制失败:', error)
+    proxy.$modal.msgError("复制失败")
+  }
+}
+
+/** 导出已签到人员信息 */
+function exportCheckedInStudents() {
+  proxy.download('edu/record/exportCheckedIn', {
+    taskId: currentTaskId.value
+  }, `已签到人员_${currentTaskRow.value.taskName}.xlsx`)
+}
+
+/** 导出未签到人员信息 */
+function exportNotCheckedInStudents() {
+  proxy.download('edu/record/exportNotCheckedIn', {
+    taskId: currentTaskId.value
+  }, `未签到人员_${currentTaskRow.value.taskName}.xlsx`)
 }
 
 /** 删除签到记录 */

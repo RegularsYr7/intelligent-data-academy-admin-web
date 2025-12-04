@@ -47,12 +47,6 @@
 
     <!-- 列表视图 -->
     <div v-if="viewMode === 'table'">
-      <el-row :gutter="10" class="mb8">
-        <el-col :span="1.5">
-          <el-button type="primary" plain icon="Plus" @click="handleAdd()">新增</el-button>
-          <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleBatchDelete">删除</el-button>
-        </el-col>
-      </el-row>
 
       <el-table v-loading="loading" :data="scheduleList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
@@ -74,11 +68,7 @@
             第{{ scope.row.startWeek }}-{{ scope.row.endWeek }}周
           </template>
         </el-table-column>
-        <el-table-column label="周次类型" align="center" prop="weekType">
-          <template #default="scope">
-            {{ weekTypeMap[scope.row.weekType] || '未知' }}
-          </template>
-        </el-table-column>
+
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
             <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)">修改</el-button>
@@ -182,8 +172,6 @@
         <el-form-item label="周次类型" prop="weekType">
           <el-radio-group v-model="form.weekType">
             <el-radio label="0">全部</el-radio>
-            <el-radio label="1">单周</el-radio>
-            <el-radio label="2">双周</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>

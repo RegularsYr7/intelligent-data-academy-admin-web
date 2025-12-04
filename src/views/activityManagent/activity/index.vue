@@ -57,14 +57,6 @@
                     </el-form-item>
                 </el-col>
                 <el-col :span="6">
-                    <el-form-item label="状态" prop="status">
-                        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 100%;">
-                            <el-option v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.label"
-                                :value="dict.value" />
-                        </el-select>
-                    </el-form-item>
-                </el-col>
-                <el-col :span="6">
                     <el-form-item>
                         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
                         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -163,6 +155,7 @@
         <!-- 添加或修改活动信息对话框 -->
         <el-dialog :title="title" v-model="open" width="1200px" append-to-body>
             <el-form ref="activityRef" :model="form" :rules="rules" label-width="140px">
+                <!-- 第一行:活动名称、活动类型 -->
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item label="活动名称" prop="activityName">
@@ -178,15 +171,9 @@
                         </el-form-item>
                     </el-col>
                 </el-row>
+
+                <!-- 第二行:活动级别、联系电话 -->
                 <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="活动状态" prop="activityStatus">
-                            <el-select v-model="form.activityStatus" placeholder="请选择状态" style="width: 100%">
-                                <el-option v-for="dict in edu_activity_status" :key="dict.value" :label="dict.label"
-                                    :value="dict.value"></el-option>
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
                     <el-col :span="12">
                         <el-form-item label="活动级别" prop="activityLevel">
                             <el-select v-model="form.activityLevel" placeholder="请选择活动级别" style="width: 100%">
@@ -195,7 +182,14 @@
                             </el-select>
                         </el-form-item>
                     </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="联系电话" prop="contactPhone">
+                            <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
+                        </el-form-item>
+                    </el-col>
                 </el-row>
+
+                <!-- 第三行:所属学校、所属组织 -->
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item label="所属学校" prop="schoolId">
@@ -208,8 +202,8 @@
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="所属组织" prop="organizationId">
-                            <el-select v-model="form.organizationId" placeholder="请选择所属组织" clearable filterable
-                                @change="handleOrganizationChange" style="width: 100%;">
+                            <el-select v-model="form.organizationId" placeholder="请先选择学校" clearable filterable
+                                :disabled="!form.schoolId" @change="handleOrganizationChange" style="width: 100%;">
                                 <el-option v-for="org in formOrganizationList" :key="org.organizationId"
                                     :label="org.organizationName" :value="org.organizationId"></el-option>
                             </el-select>
@@ -290,16 +284,6 @@
                             </el-select>
                         </el-form-item>
                     </el-col>
-                </el-row>
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="是否支持请假" prop="allowLeave">
-                            <el-radio-group v-model="form.allowLeave">
-                                <el-radio v-for="dict in sys_yes_no" :key="dict.value" :label="dict.value">{{ dict.label
-                                }}</el-radio>
-                            </el-radio-group>
-                        </el-form-item>
-                    </el-col>
                     <el-col :span="12">
                         <el-form-item label="最多报名人数" prop="maxParticipants">
                             <el-input v-model="form.maxParticipants" placeholder="请输入最多报名人数(0表示不限制)" />
@@ -313,13 +297,6 @@
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item label="联系电话" prop="contactPhone">
-                            <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-                <el-row :gutter="20">
-                    <el-col :span="24">
                         <el-form-item label="活动标签" prop="activityTags">
                             <el-input v-model="form.activityTags" placeholder="点击右侧按钮选择标签" readonly>
                                 <template #append>
@@ -358,22 +335,7 @@
                         </el-form-item>
                     </el-col>
                 </el-row>
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="封面图片" prop="coverImage">
-                            <image-upload v-model="form.coverImage" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="状态" prop="status">
-                            <el-radio-group v-model="form.status">
-                                <el-radio v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.value">{{
-                                    dict.label
-                                }}</el-radio>
-                            </el-radio-group>
-                        </el-form-item>
-                    </el-col>
-                </el-row>
+
             </el-form>
             <template #footer>
                 <div class="dialog-footer">
@@ -454,11 +416,10 @@
                 <el-table-column type="selection" width="55" align="center" />
                 <el-table-column label="姓名" align="center" prop="studentName" min-width="100" show-overflow-tooltip />
                 <el-table-column label="学号" align="center" prop="studentNo" min-width="120" show-overflow-tooltip />
-                <el-table-column label="角色" align="center" prop="role" width="100">
+                <el-table-column label="角色" align="center" prop="memberRole" width="100">
                     <template #default="scope">
-                        <el-tag v-if="scope.row.role === '1'" type="danger">会长</el-tag>
-                        <el-tag v-else-if="scope.row.role === '2'" type="warning">副会长</el-tag>
-                        <el-tag v-else-if="scope.row.role === '3'" type="success">干事</el-tag>
+                        <el-tag v-if="scope.row.memberRole === '2'" type="danger">主席</el-tag>
+                        <el-tag v-else-if="scope.row.memberRole === '1'" type="warning">管理员</el-tag>
                         <el-tag v-else type="info">成员</el-tag>
                     </template>
                 </el-table-column>
@@ -510,8 +471,10 @@
                         <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
                     </template>
                 </el-table-column>
-                <el-table-column label="操作" align="center" width="100" fixed="right">
+                <el-table-column label="操作" align="center" width="150" fixed="right">
                     <template #default="scope">
+                        <el-button v-if="scope.row.participateStatus === '4'" link type="primary" icon="Check"
+                            @click="handleApproveParticipant(scope.row)">录取</el-button>
                         <el-button link type="danger" icon="Delete" @click="handleDeleteParticipant(scope.row)"
                             v-hasPermi="['edu:participant:remove']">删除</el-button>
                     </template>
@@ -525,7 +488,7 @@
 </template>
 
 <script setup name="Activity">
-import { listActivity, getActivity, delActivity, addActivity, updateActivity } from "@/api/edu/activity"
+import { listActivity, getActivity, delActivity, addActivity, updateActivity, approveActivity } from "@/api/edu/activity"
 import { listParticipant, delParticipant } from "@/api/edu/participant"
 import { listSchool } from "@/api/edu/school"
 import { listOrganization } from "@/api/edu/organization"
@@ -572,8 +535,8 @@ const selectedLocation = ref({
 })
 
 const DEFAULT_LOCATION = {
-    longitude: 104.078814,
-    latitude: 30.663611,
+    longitude: 104.464508,
+    latitude: 30.845427,
     address: "成都文理学院"
 }
 
@@ -662,7 +625,7 @@ function getOrganizationList() {
     return listOrganization().then(response => {
         allOrganizationList.value = response.rows || []
         queryOrganizationList.value = []  // 搜索框组织列表初始为空,需要先选择学校
-        formOrganizationList.value = response.rows || []
+        formOrganizationList.value = [] // 表单组织列表初始为空,需要先选择学校
         return response
     })
 }
@@ -1249,6 +1212,16 @@ function getParticipantList() {
         participantTotal.value = response.total
         participantLoading.value = false
     })
+}
+
+/** 录取报名 */
+function handleApproveParticipant(row) {
+    proxy.$modal.confirm('确认录取该学生参加活动吗？').then(function () {
+        return approveActivity({ participantIds: row.participantId + '' })
+    }).then(() => {
+        getParticipantList()
+        proxy.$modal.msgSuccess("录取成功")
+    }).catch(() => { })
 }
 
 /** 删除参与记录 */

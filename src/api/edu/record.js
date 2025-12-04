@@ -42,3 +42,21 @@ export function delRecord(recordId) {
     method: 'delete'
   })
 }
+
+// 复制已签到人员信息
+export function copyCheckedIn(taskId) {
+  return request({
+    url: '/edu/record/copyCheckedIn',
+    method: 'post',
+    params: { taskId }
+  })
+}
+
+// 复制未签到人员信息
+export function copyNotCheckedIn(taskId) {
+  return request({
+    url: '/edu/record/copyNotCheckedIn',
+    method: 'post',
+    params: { taskId }
+  })
+}
