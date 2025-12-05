@@ -227,12 +227,6 @@ const { proxy } = getCurrentInstance();
 
 const viewMode = ref("schedule"); // 视图模式：schedule-课表视图，table-列表视图
 
-// 周次类型映射
-const weekTypeMap = {
-  '0': '全部',
-  '1': '单周',
-  '2': '双周'
-};
 
 const queryParams = ref({
   pageNum: 1,
@@ -570,6 +564,8 @@ function getList() {
     allSemesterList.value = res.rows;
     semesterList.value = res.rows;
   });
+
+  handleQuery();
 }
 
 // 获取课程列表（列表视图）

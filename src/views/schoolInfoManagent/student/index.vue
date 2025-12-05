@@ -205,17 +205,17 @@
           <span>{{schoolOptions.find(s => s.schoolId === scope.row.schoolId)?.schoolName || '-'}}</span>
         </template>
       </el-table-column>
-      <el-table-column label="学院" align="center" prop="collegeId" min-width="140" show-overflow-tooltip>
+      <el-table-column label="学院" align="center" prop="collegeId" min-width="200" show-overflow-tooltip>
         <template #default="scope">
           <span>{{collegeOptions.find(c => c.collegeId === scope.row.collegeId)?.collegeName || '-'}}</span>
         </template>
       </el-table-column>
-      <el-table-column label="专业" align="center" prop="majorId" min-width="160" show-overflow-tooltip>
+      <el-table-column label="专业" align="center" prop="majorId" min-width="220" show-overflow-tooltip>
         <template #default="scope">
           <span>{{majorOptions.find(m => m.majorId === scope.row.majorId)?.majorName || '-'}}</span>
         </template>
       </el-table-column>
-      <el-table-column label="班级" align="center" prop="classId" min-width="140" show-overflow-tooltip>
+      <el-table-column label="班级" align="center" prop="classId" min-width="300" show-overflow-tooltip>
         <template #default="scope">
           <span>{{classOptions.find(c => c.classId === scope.row.classId)?.className || '-'}}</span>
         </template>
@@ -223,7 +223,7 @@
       <el-table-column label="手机号" align="center" prop="phoneCode" min-width="120" show-overflow-tooltip />
       <el-table-column label="身份证号" align="center" prop="idCard" min-width="180" show-overflow-tooltip />
       <el-table-column label="年级" align="center" prop="grade" min-width="100" show-overflow-tooltip />
-      <el-table-column label="社区昵称" align="center" prop="communityName" min-width="120" show-overflow-tooltip />
+      <el-table-column label="社区昵称" align="center" prop="communityName" min-width="180" show-overflow-tooltip />
       <el-table-column label="量化分" align="center" prop="quantitativeScore" min-width="100">
         <template #default="scope">
           <span style="color: #409EFF; font-weight: bold;">{{ scope.row.quantitativeScore || 0 }}</span>

@@ -91,7 +91,7 @@
             <el-table-column type="selection" width="55" align="center" fixed />
             <el-table-column label="活动名称" align="center" prop="activityName" min-width="150" show-overflow-tooltip />
             <el-table-column label="所属学校" align="center" prop="schoolName" min-width="120" show-overflow-tooltip />
-            <el-table-column label="所属组织" align="center" prop="organizationName" min-width="120"
+            <el-table-column label="所属组织" align="center" prop="organizationName" min-width="280"
                 show-overflow-tooltip />
             <el-table-column label="活动类型" align="center" prop="activityType" width="100">
                 <template #default="scope">
@@ -318,6 +318,20 @@
                                 style="margin-top: 5px; color: #999; font-size: 12px;">
                                 经度: {{ form.longitude }} | 纬度: {{ form.latitude }}
                             </div>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row :gutter="20">
+                    <el-col :span="24">
+                        <el-form-item label="封面图片" prop="coverImage">
+                            <image-upload v-model="form.coverImage" :limit="1" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row :gutter="20">
+                    <el-col :span="24">
+                        <el-form-item label="轮播图" prop="imageUrls">
+                            <image-upload v-model="form.imageUrls" :limit="5" />
                         </el-form-item>
                     </el-col>
                 </el-row>

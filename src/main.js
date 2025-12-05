@@ -9,6 +9,31 @@ import locale from 'element-plus/es/locale/lang/zh-cn'
 
 import '@/assets/styles/index.scss' // global css
 
+// 生产环境禁用调试工具
+if (import.meta.env.PROD) {
+  import('disable-devtool').then(module => {
+    module.default({
+      // 禁用的快捷键
+      disableMenu: true, // 禁用右键菜单
+      disableSelect: false, // 允许选择文本
+      disableCopy: false, // 允许复制
+      disableCut: false, // 允许剪切
+      disablePaste: false, // 允许粘贴
+      clearLog: true, // 清除控制台日志
+      clearIntervalWhenDevOpenTrigger: true, // 检测到开发工具时清除定时器
+      // 检测到开发工具打开时的回调
+      ondevtoolopen: () => {
+        const content = '检测到非法调试，请关闭开发者工具！'
+        // 创建全屏遮罩
+        const div = document.createElement('div')
+        div.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;z-index:999999;'
+        div.textContent = content
+        document.body.appendChild(div)
+      }
+    })
+  })
+}
+
 import App from './App'
 import store from './store'
 import router from './router'

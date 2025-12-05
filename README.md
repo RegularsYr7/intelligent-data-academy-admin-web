@@ -1,4 +1,4 @@
-# 智慧数据学院管理平台（Rainy-data-school）
+# 智数服务舱管理平台（Rainy-data-school）
 
 ## 项目综述
 
